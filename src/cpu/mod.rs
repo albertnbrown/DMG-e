@@ -13,6 +13,25 @@ struct CPU {
 }
 
 impl CPU {
+    fn step(&mut self) {
+        //fetch
+        let mut instruction_byte = self.memory.read_byte(self.pc);
+        self.pc += 1;
+        let prefixed = instruction_byte == 0xCB;
+        if prefixed {
+            instruction_byte = self.memory.read_byte(self.pc); // pc has already been incremented
+            self.pc += 1; // increment again to put in expected location
+        }
+    
+        // decode
+        if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed) {
+          self.execute(instruction)
+        } else {
+          let description = format!("0x{}{:x}", if prefixed { "cb" } else { "" }, instruction_byte);
+          panic!("Unkown instruction found for: {}", description)
+        };
+    }
+
     fn execute(&mut self, instruction: Instruction) {
       match instruction {
         Instruction::ADD(target) => {
