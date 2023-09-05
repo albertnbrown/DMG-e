@@ -69,6 +69,33 @@ impl CPU {
             }
         }
     }
+
+    // map enum to register
+    fn set_register_target(&mut self, target: RegisterTarget, value: u8) {
+        match target {
+            RegisterTarget::A => {
+                self.registers.a = value;
+            }
+            RegisterTarget::B => {
+                self.registers.b = value;
+            }
+            RegisterTarget::C => {
+                self.registers.c = value;
+            }
+            RegisterTarget::D => {
+                self.registers.d = value;
+            }
+            RegisterTarget::E => {
+                self.registers.e = value;
+            }
+            RegisterTarget::H => {
+                self.registers.h = value;
+            }
+            RegisterTarget::L => {
+                self.registers.l = value;
+            }
+        }
+    }
   
     // adds to register a
     fn add(&mut self, value: u8) -> u8 {
