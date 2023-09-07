@@ -12,6 +12,19 @@ pub enum Instruction {
   INCmem(MemoryTarget), // increments value at memory target
   DEC(RegisterTarget), // decrements register target
   DECmem(MemoryTarget), // decrements value at memory target
+  AND(RegisterTarget), // logical & between register target and register a, store in register a
+  ANDmem(MemoryTarget), // logical & between value at memory target and register a, store in register a
+  ANDn(), // logical & between immediate byte and register a, store in register a
+  XOR(RegisterTarget), // logical ^ between register target and register a, store in register a
+  XORmem(MemoryTarget), // logical ^ between value at memory target and register a, store in register a
+  XORn(), // logical ^ between immediate byte and register a, store in register a
+  OR(RegisterTarget), // logical | between register target and register a, store in register a
+  ORmem(MemoryTarget), // logical | between value at memory target and register a, store in register a
+  ORn(), // logical | between immediate byte and register a, store in register a
+  CCF(), // flip carry flag
+  SCF(), // set carry flag to true
+  CPL(), // complement register a
+  DAA(), // retain binary decimal form after adding or subtracting binary decimals
 }
 
 pub struct Carry {
@@ -57,12 +70,16 @@ impl Instruction {
       0x1D => Some(Instruction::DEC(RegisterTarget::E)),
       0x24 => Some(Instruction::INC(RegisterTarget::H)),
       0x25 => Some(Instruction::DEC(RegisterTarget::H)),
+      0x27 => Some(Instruction::DAA()),
       0x2C => Some(Instruction::INC(RegisterTarget::L)),
       0x2D => Some(Instruction::DEC(RegisterTarget::L)),
+      0x2F => Some(Instruction::CPL()),
       0x34 => Some(Instruction::INCmem(MemoryTarget::HL)),
       0x35 => Some(Instruction::DECmem(MemoryTarget::HL)),
+      0x37 => Some(Instruction::SCF()),
       0x3C => Some(Instruction::INC(RegisterTarget::A)),
       0x3D => Some(Instruction::DEC(RegisterTarget::A)),
+      0x3F => Some(Instruction::CCF()),
       0x80 => Some(Instruction::ADD(RegisterTarget::B, Carry {include_carry: false})),
       0x81 => Some(Instruction::ADD(RegisterTarget::C, Carry {include_carry: false})),
       0x82 => Some(Instruction::ADD(RegisterTarget::D, Carry {include_carry: false})),
@@ -95,6 +112,30 @@ impl Instruction {
       0x9D => Some(Instruction::SUB(RegisterTarget::L, Carry {include_carry: true})),
       0x9E => Some(Instruction::SUBmem(MemoryTarget::HL, Carry {include_carry: true})),
       0x9F => Some(Instruction::SUB(RegisterTarget::A, Carry {include_carry: true})),
+      0xA0 => Some(Instruction::AND(RegisterTarget::B)),
+      0xA1 => Some(Instruction::AND(RegisterTarget::C)),
+      0xA2 => Some(Instruction::AND(RegisterTarget::D)),
+      0xA3 => Some(Instruction::AND(RegisterTarget::E)),
+      0xA4 => Some(Instruction::AND(RegisterTarget::H)),
+      0xA5 => Some(Instruction::AND(RegisterTarget::L)),
+      0xA6 => Some(Instruction::ANDmem(MemoryTarget::HL)),
+      0xA7 => Some(Instruction::AND(RegisterTarget::A)),
+      0xA8 => Some(Instruction::XOR(RegisterTarget::B)),
+      0xA9 => Some(Instruction::XOR(RegisterTarget::C)),
+      0xAA => Some(Instruction::XOR(RegisterTarget::D)),
+      0xAB => Some(Instruction::XOR(RegisterTarget::E)),
+      0xAC => Some(Instruction::XOR(RegisterTarget::H)),
+      0xAD => Some(Instruction::XOR(RegisterTarget::L)),
+      0xAE => Some(Instruction::XORmem(MemoryTarget::HL)),
+      0xAF => Some(Instruction::XOR(RegisterTarget::A)),
+      0xB0 => Some(Instruction::OR(RegisterTarget::B)),
+      0xB1 => Some(Instruction::OR(RegisterTarget::C)),
+      0xB2 => Some(Instruction::OR(RegisterTarget::D)),
+      0xB3 => Some(Instruction::OR(RegisterTarget::E)),
+      0xB4 => Some(Instruction::OR(RegisterTarget::H)),
+      0xB5 => Some(Instruction::OR(RegisterTarget::L)),
+      0xB6 => Some(Instruction::ORmem(MemoryTarget::HL)),
+      0xB7 => Some(Instruction::OR(RegisterTarget::A)),
       0xB8 => Some(Instruction::CP(RegisterTarget::B)),
       0xB9 => Some(Instruction::CP(RegisterTarget::C)),
       0xBA => Some(Instruction::CP(RegisterTarget::D)),
@@ -107,7 +148,9 @@ impl Instruction {
       0xCE => Some(Instruction::ADDn(Carry { include_carry: true })),
       0xD6 => Some(Instruction::SUBn(Carry { include_carry: false })),
       0xDE => Some(Instruction::SUBn(Carry { include_carry: true })),
-      0xF6 => Some(Instruction::CPn()),
+      0xE6 => Some(Instruction::ANDn()),
+      0xEE => Some(Instruction::XORn()),
+      0xF6 => Some(Instruction::ORn()),
       0xFE => Some(Instruction::CPn()),
       _ => /* TODO: Add mapping for rest of instructions */ None
     }

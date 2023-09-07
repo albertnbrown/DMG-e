@@ -100,6 +100,75 @@ impl CPU {
             if carry == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
             self.set_memory_target(target, new_value);
         }
+        Instruction::AND(target) => {
+            self.registers.a = self.logical_and(self.registers.a, self.fetch_register_target(target));
+        }
+        Instruction::ANDmem(target) => {
+            self.registers.a = self.logical_and(self.registers.a, self.fetch_memory_target(target));
+        }
+        Instruction::ANDn() => {
+            let value = self.fetch_n(); // mutates pc so must be called separately
+            self.registers.a = self.logical_and(self.registers.a, value);
+        }
+        Instruction::XOR(target) => {
+            self.registers.a = self.logical_xor(self.registers.a, self.fetch_register_target(target));
+        }
+        Instruction::XORmem(target) => {
+            self.registers.a = self.logical_xor(self.registers.a, self.fetch_memory_target(target));
+        }
+        Instruction::XORn() => {
+            let value = self.fetch_n(); // mutates pc so must be called separately
+            self.registers.a = self.logical_xor(self.registers.a, value);
+        }
+        Instruction::OR(target) => {
+            self.registers.a = self.logical_or(self.registers.a, self.fetch_register_target(target));
+        }
+        Instruction::ORmem(target) => {
+            self.registers.a = self.logical_or(self.registers.a, self.fetch_memory_target(target));
+        }
+        Instruction::ORn() => {
+            let value = self.fetch_n(); // mutates pc so must be called separately
+            self.registers.a = self.logical_or(self.registers.a, value);
+        }
+        Instruction::CCF() => {
+            if self.registers.get_carry() == 1 {
+                self.registers.clear_carry();
+            } else {
+                self.registers.flag_carry();
+            }
+            self.registers.clear_subtract();
+            self.registers.clear_half_carry();
+        }
+        Instruction::SCF() => {
+            self.registers.flag_carry();
+            self.registers.clear_subtract();
+            self.registers.clear_half_carry();
+        }
+        Instruction::CPL() => {
+            self.registers.a = !self.registers.a;
+            self.registers.flag_subtract();
+            self.registers.flag_half_carry();
+        }
+        Instruction::DAA() => {
+            let mut adjuster: u8 = 0;
+            let subtract: bool = self.registers.get_subtract() == 1;
+            if self.registers.get_carry() == 1 || (!subtract && self.registers.a > 0x99) {
+                adjuster += 0x60;
+                self.registers.flag_carry(); // for if the second clause is true but not the first
+            }
+            if self.registers.get_half_carry() == 1 || (!subtract && self.registers.a & 0x0F > 0x09) {
+                adjuster += 0x06;
+            }
+            if subtract {
+                let (new_value, _) = self.registers.a.overflowing_sub(adjuster);
+                self.registers.a = new_value;
+            } else {
+                let (new_value, _) = self.registers.a.overflowing_add(adjuster);
+                self.registers.a = new_value;
+            }
+            self.registers.clear_half_carry();
+            if self.registers.a == 0 {self.registers.flag_zero();} else {self.registers.clear_zero();}
+        }
         _ => { /* TODO: support more instructions */ }
       }
     }
@@ -207,7 +276,7 @@ impl CPU {
         return data;
     }
 
-    // adds to register a
+    // adds and sets flags
     fn add(&mut self, base: u8, value: u8) -> u8 {
       let (new_value, did_overflow) = base.overflowing_add(value);
       if new_value == 0 { self.registers.flag_zero(); } else { self.registers.clear_zero() }
@@ -217,7 +286,7 @@ impl CPU {
       return new_value;
     }
 
-    // subtracts from register a
+    // subtracts and sets flags
     fn sub(&mut self, base: u8, value: u8) -> u8 {
       let (new_value, did_overflow) = base.overflowing_sub(value);
       if new_value == 0 { self.registers.flag_zero(); } else { self.registers.clear_zero() }
@@ -226,6 +295,36 @@ impl CPU {
       let (_, half_carry) = (base & 0xF).overflowing_sub(value & 0xF);
       if  half_carry { self.registers.flag_half_carry(); } else { self.registers.clear_half_carry() }
       return new_value;
+    }
+
+    // logical and
+    fn logical_and(&mut self, base: u8, value: u8) -> u8 {
+        let new_value = base & value;
+        if new_value == 0 { self.registers.flag_zero(); } else { self.registers.clear_zero() }
+        self.registers.clear_subtract();
+        self.registers.flag_half_carry();
+        self.registers.clear_carry();
+        return new_value;
+    }
+
+    // logical xor
+    fn logical_xor(&mut self, base: u8, value: u8) -> u8 {
+        let new_value = base ^ value;
+        if new_value == 0 { self.registers.flag_zero(); } else { self.registers.clear_zero() }
+        self.registers.clear_subtract();
+        self.registers.clear_half_carry();
+        self.registers.clear_carry();
+        return new_value;
+    }
+
+    // logical or
+    fn logical_or(&mut self, base: u8, value: u8) -> u8 {
+        let new_value = base | value;
+        if new_value == 0 { self.registers.flag_zero(); } else { self.registers.clear_zero() }
+        self.registers.clear_subtract();
+        self.registers.clear_half_carry();
+        self.registers.clear_carry();
+        return new_value;
     }
   }
   
