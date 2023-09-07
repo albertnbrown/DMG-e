@@ -54,6 +54,22 @@ impl Registers {
         self.f = FlagsRegister::from((value & 0xFF) as u8);
     }
 
+    pub fn get_zero(&self) -> u8 {
+        return if self.f.zero { 1 } else { 0 }
+    }
+
+    pub fn get_subtract(&self) -> u8 {
+        return if self.f.subtract { 1 } else { 0 }
+    }
+
+    pub fn get_carry(&self) -> u8 {
+        return if self.f.carry { 1 } else { 0 }
+    }
+
+    pub fn get_half_carry(&self) -> u8 {
+        return if self.f.half_carry { 1 } else { 0 }
+    }
+
     pub fn flag_zero(&mut self) {
         self.f.zero = true;
     }
