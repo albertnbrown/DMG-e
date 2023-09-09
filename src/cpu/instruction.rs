@@ -37,6 +37,7 @@ pub struct Carry {
   pub include_carry: bool,
 }
 
+#[derive(Clone, Copy)]
 pub enum Conditional {
   ZeroFlag,
   NotZeroFlag,
@@ -192,7 +193,7 @@ impl Instruction {
       0xF7 => Some(Instruction::CallI(InvariantFunction::F30)),
       0xFE => Some(Instruction::CPn()),
       0xFF => Some(Instruction::CallI(InvariantFunction::F38)),
-      _ => /* TODO: Add mapping for rest of instructions */ None
+      _ => None
     }
   }
 }

@@ -14,7 +14,8 @@ struct CPU {
 }
 
 impl CPU {
-    fn step(&mut self) {
+    // returns the number of machine cycles taken by the step
+    fn step(&mut self) -> usize {
         //fetch
         let mut instruction_byte = self.memory.read_byte(self.pc);
         self.pc += 1;
@@ -26,110 +27,133 @@ impl CPU {
     
         // decode
         if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed) {
-          self.execute(instruction)
+          return self.execute(instruction);
         } else {
           let description = format!("0x{}{:x}", if prefixed { "cb" } else { "" }, instruction_byte);
           panic!("Unkown instruction found for: {}", description)
         };
     }
 
-    fn execute(&mut self, instruction: Instruction) {
+    // returns the number of machine cycles taken by the instruction
+    fn execute(&mut self, instruction: Instruction) -> usize {
       match instruction {
         Instruction::ADD(target, carry_flag) => {
             let carry: u8 = if carry_flag.include_carry { self.registers.get_carry() } else { 0 };
             let value: u8 = self.fetch_register_target(target) + carry;
             self.registers.a = self.add(self.registers.a, value);
+            return 1;
         }
         Instruction::ADDmem(target, carry_flag) => {
             let carry: u8 = if carry_flag.include_carry { self.registers.get_carry() } else { 0 };
             let value: u8 = self.fetch_memory_target(target) + carry;
             self.registers.a = self.add(self.registers.a, value);
+            return 2;
         }
         Instruction::ADDn(carry_flag) => {
             let carry: u8 = if carry_flag.include_carry { self.registers.get_carry() } else { 0 };
             let value: u8 = self.fetch_n() + carry;
             self.registers.a = self.add(self.registers.a, value);
+            return 2;
         }
         Instruction::SUB(target, carry_flag) => {
             let carry: u8 = if carry_flag.include_carry { self.registers.get_carry() } else { 0 };
             let value: u8 = self.fetch_register_target(target) + carry;
             self.registers.a = self.sub(self.registers.a, value);
+            return 1;
         }
         Instruction::SUBmem(target, carry_flag) => {
             let carry: u8 = if carry_flag.include_carry { self.registers.get_carry() } else { 0 };
             let value: u8 = self.fetch_memory_target(target) + carry;
             self.registers.a = self.sub(self.registers.a, value);
+            return 2;
         }
         Instruction::SUBn(carry_flag) => {
             let carry: u8 = if carry_flag.include_carry { self.registers.get_carry() } else { 0 };
             let value: u8 = self.fetch_n() + carry;
             self.registers.a = self.sub(self.registers.a, value);
+            return 2;
         }
         Instruction::CP(target) => {
             let value: u8 = self.fetch_register_target(target);
             let _ = self.sub(self.registers.a, value); // sub but just for the effect on the flags
+            return 1;
         }
         Instruction::CPmem(target) => {
             let value: u8 = self.fetch_memory_target(target);
             let _ = self.sub(self.registers.a, value); // sub but just for the effect on the flags
+            return 2;
         }
         Instruction::CPn() => {
             let value: u8 = self.fetch_n();
             let _ = self.sub(self.registers.a, value); // sub but just for the effect on the flags
+            return 2;
         }
         Instruction::INC(target) => {
             let carry = self.registers.get_carry(); // need to preserve carry value as this op does not change it
             let new_value: u8 = self.add(self.fetch_register_target(target), 1);
             if carry == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
             self.set_register_target(target, new_value);
+            return 1;
         }
         Instruction::INCmem(target) => {
             let carry = self.registers.get_carry(); // need to preserve carry value as this op does not change it
             let new_value: u8 = self.add(self.fetch_memory_target(target), 1);
             if carry == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
             self.set_memory_target(target, new_value);
+            return 3;
         }
         Instruction::DEC(target) => {
             let carry = self.registers.get_carry(); // need to preserve carry value as this op does not change it
             let new_value: u8 = self.sub(self.fetch_register_target(target), 1);
             if carry == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
             self.set_register_target(target, new_value);
+            return 1;
         }
         Instruction::DECmem(target) => {
             let carry = self.registers.get_carry(); // need to preserve carry value as this op does not change it
             let new_value: u8 = self.sub(self.fetch_memory_target(target), 1);
             if carry == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
             self.set_memory_target(target, new_value);
+            return 3;
         }
         Instruction::AND(target) => {
             self.registers.a = self.logical_and(self.registers.a, self.fetch_register_target(target));
+            return 1;
         }
         Instruction::ANDmem(target) => {
             self.registers.a = self.logical_and(self.registers.a, self.fetch_memory_target(target));
+            return 2;
         }
         Instruction::ANDn() => {
             let value = self.fetch_n(); // mutates pc so must be called separately
             self.registers.a = self.logical_and(self.registers.a, value);
+            return 2;
         }
         Instruction::XOR(target) => {
             self.registers.a = self.logical_xor(self.registers.a, self.fetch_register_target(target));
+            return 1;
         }
         Instruction::XORmem(target) => {
             self.registers.a = self.logical_xor(self.registers.a, self.fetch_memory_target(target));
+            return 2;
         }
         Instruction::XORn() => {
             let value = self.fetch_n(); // mutates pc so must be called separately
             self.registers.a = self.logical_xor(self.registers.a, value);
+            return 2;
         }
         Instruction::OR(target) => {
             self.registers.a = self.logical_or(self.registers.a, self.fetch_register_target(target));
+            return 1;
         }
         Instruction::ORmem(target) => {
             self.registers.a = self.logical_or(self.registers.a, self.fetch_memory_target(target));
+            return 2;
         }
         Instruction::ORn() => {
             let value = self.fetch_n(); // mutates pc so must be called separately
             self.registers.a = self.logical_or(self.registers.a, value);
+            return 2;
         }
         Instruction::CCF() => {
             if self.registers.get_carry() == 1 {
@@ -139,16 +163,19 @@ impl CPU {
             }
             self.registers.clear_subtract();
             self.registers.clear_half_carry();
+            return 1;
         }
         Instruction::SCF() => {
             self.registers.flag_carry();
             self.registers.clear_subtract();
             self.registers.clear_half_carry();
+            return 1;
         }
         Instruction::CPL() => {
             self.registers.a = !self.registers.a;
             self.registers.flag_subtract();
             self.registers.flag_half_carry();
+            return 1;
         }
         Instruction::DAA() => {
             let mut adjuster: u8 = 0;
@@ -169,45 +196,62 @@ impl CPU {
             }
             self.registers.clear_half_carry();
             if self.registers.a == 0 {self.registers.flag_zero();} else {self.registers.clear_zero();}
+            return 1;
         }
         Instruction::JumpNN(condition) => {
+            let mut cycles: usize = 3;
             // need to increment PC by fetching outside the conditional
             let new_location = self.fetch_nn();
             let do_jump = self.check_conditional(condition);
             if do_jump {
                 self.pc = new_location;
+                cycles += 1;
             }
+            return cycles;
         }
         Instruction::JumpHL() => {
             self.pc = self.registers.get_hl();
+            return 1;
         }
         Instruction::JumpRn(condition) => {
+            let mut cycles: usize = 2;
             // need to increment PC by fetching outside the conditional
             let n = self.fetch_n();
             let do_jump = self.check_conditional(condition);
             if do_jump {
                 self.pc = (((self.pc + (n as u16)) as i32) + (i8::MIN as i32)) as u16;
+                cycles += 1;
             }
+            return cycles;
         }
         Instruction::CallNN(condition) => {
+            let mut cycles: usize = 3;
             let new_location = self.fetch_nn();
             let do_call = self.check_conditional(condition);
             if do_call {
                 self.push(self.pc);
                 self.pc = new_location;
+                cycles += 3;
             }
+            return cycles;
         }
         Instruction::Return(condition) => {
+            let mut cycles: usize = 2;
             let do_call = self.check_conditional(condition);
             if do_call {
                 self.pc =  self.pop();
+                match condition {
+                    Conditional::Unconditional => {cycles += 2;}
+                    _ => {cycles += 3;}
+                }
             }
+            return cycles;
         }
         Instruction::CallI(target) => {
             self.push(self.pc);
             self.pc = self.deref_invariant_function(target);
+            return 4;
         }
-        _ => { /* TODO: support more instructions */ }
       }
     }
 
