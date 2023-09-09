@@ -9,6 +9,7 @@ use instruction::*;
 struct CPU {
     registers: Registers,
     pc: u16,
+    sp: u16,
     memory: Memory,
 }
 
@@ -169,6 +170,43 @@ impl CPU {
             self.registers.clear_half_carry();
             if self.registers.a == 0 {self.registers.flag_zero();} else {self.registers.clear_zero();}
         }
+        Instruction::JumpNN(condition) => {
+            // need to increment PC by fetching outside the conditional
+            let new_location = self.fetch_nn();
+            let do_jump = self.check_conditional(condition);
+            if do_jump {
+                self.pc = new_location;
+            }
+        }
+        Instruction::JumpHL() => {
+            self.pc = self.registers.get_hl();
+        }
+        Instruction::JumpRn(condition) => {
+            // need to increment PC by fetching outside the conditional
+            let n = self.fetch_n();
+            let do_jump = self.check_conditional(condition);
+            if do_jump {
+                self.pc = (((self.pc + (n as u16)) as i32) + (i8::MIN as i32)) as u16;
+            }
+        }
+        Instruction::CallNN(condition) => {
+            let new_location = self.fetch_nn();
+            let do_call = self.check_conditional(condition);
+            if do_call {
+                self.push(self.pc);
+                self.pc = new_location;
+            }
+        }
+        Instruction::Return(condition) => {
+            let do_call = self.check_conditional(condition);
+            if do_call {
+                self.pc =  self.pop();
+            }
+        }
+        Instruction::CallI(target) => {
+            self.push(self.pc);
+            self.pc = self.deref_invariant_function(target);
+        }
         _ => { /* TODO: support more instructions */ }
       }
     }
@@ -326,6 +364,76 @@ impl CPU {
         self.registers.clear_carry();
         return new_value;
     }
-  }
+
+    // for parsing conditional expressions
+    fn check_conditional(&self, conditional: Conditional) -> bool {
+        match conditional {
+            Conditional::ZeroFlag => {
+                if self.registers.get_zero() == 1 {return true;} else {return false;}
+            }
+            Conditional::NotZeroFlag => {
+                if self.registers.get_zero() == 0 {return true;} else {return false;}
+            }
+            Conditional::CarryFlag => {
+                if self.registers.get_carry() == 1 {return true;} else {return false;}
+            }
+            Conditional::NotCarryFlag => {
+                if self.registers.get_carry() == 0 {return true;} else {return false;}
+            }
+            Conditional::Unconditional => {
+                return true;
+            }
+        }
+    }
+
+    fn deref_invariant_function(&self, function: InvariantFunction) -> u16 {
+        match function {
+            InvariantFunction::F00 => {
+                return 0x0000_u16;
+            }
+            InvariantFunction::F08 => {
+                return 0x0008_u16;
+            }
+            InvariantFunction::F10 => {
+                return 0x0010_u16;
+            }
+            InvariantFunction::F18 => {
+                return 0x0018_u16;
+            }
+            InvariantFunction::F20 => {
+                return 0x0020_u16;
+            }
+            InvariantFunction::F28 => {
+                return 0x0028_u16;
+            }
+            InvariantFunction::F30 => {
+                return 0x0030_u16;
+            }
+            InvariantFunction::F38 => {
+                return 0x0038_u16;
+            }
+        }
+    }
+
+    // push to the stack
+    fn push(&mut self, value: u16) {
+        self.sp = self.sp.wrapping_sub(1);
+        self.memory.set_byte(self.sp, ((value & 0xFF00) >> 8) as u8);
+    
+        self.sp = self.sp.wrapping_sub(1);
+        self.memory.set_byte(self.sp, (value & 0xFF) as u8);
+    }
+
+    // pop from the stack
+    fn pop(&mut self) -> u16 {
+        let lsb = self.memory.read_byte(self.sp) as u16;
+        self.sp = self.sp.wrapping_add(1);
+    
+        let msb = self.memory.read_byte(self.sp) as u16;
+        self.sp = self.sp.wrapping_add(1);
+    
+        return (msb << 8) | lsb;
+      }
+}
   
   

@@ -25,10 +25,28 @@ pub enum Instruction {
   SCF(), // set carry flag to true
   CPL(), // complement register a
   DAA(), // retain binary decimal form after adding or subtracting binary decimals
+  JumpNN(Conditional), // jump to the memory address stored in nn
+  JumpHL(), // jump to the pc stored in HL
+  JumpRn(Conditional), // jump relatively by the signed amount stored in n
+  CallNN(Conditional), // push pc to stack and jump to nn
+  Return(Conditional), // pop a pc from the stack and jump to it
+  CallI(InvariantFunction), // pop a pc from the stack and jump to it
 }
 
 pub struct Carry {
   pub include_carry: bool,
+}
+
+pub enum Conditional {
+  ZeroFlag,
+  NotZeroFlag,
+  CarryFlag,
+  NotCarryFlag,
+  Unconditional,
+}
+
+pub enum InvariantFunction {
+  F00, F08, F10, F18, F20, F28, F30, F38,
 }
 
 #[derive(Clone, Copy)]
@@ -59,24 +77,28 @@ impl Instruction {
 
   fn from_byte_not_prefixed(byte: u8) -> Option<Instruction> {
     match byte {
-      // 0x02 => Some(Instruction::INC(IncDecTarget::BC)),
       0x04 => Some(Instruction::INC(RegisterTarget::B)),
       0x05 => Some(Instruction::DEC(RegisterTarget::B)),
       0x0C => Some(Instruction::INC(RegisterTarget::C)),
       0x0D => Some(Instruction::DEC(RegisterTarget::C)),
       0x14 => Some(Instruction::INC(RegisterTarget::D)),
       0x15 => Some(Instruction::DEC(RegisterTarget::D)),
+      0x18 => Some(Instruction::JumpRn(Conditional::Unconditional)),
       0x1C => Some(Instruction::INC(RegisterTarget::E)),
       0x1D => Some(Instruction::DEC(RegisterTarget::E)),
+      0x20 => Some(Instruction::JumpRn(Conditional::NotZeroFlag)),
       0x24 => Some(Instruction::INC(RegisterTarget::H)),
       0x25 => Some(Instruction::DEC(RegisterTarget::H)),
       0x27 => Some(Instruction::DAA()),
+      0x28 => Some(Instruction::JumpRn(Conditional::ZeroFlag)),
       0x2C => Some(Instruction::INC(RegisterTarget::L)),
       0x2D => Some(Instruction::DEC(RegisterTarget::L)),
       0x2F => Some(Instruction::CPL()),
+      0x30 => Some(Instruction::JumpRn(Conditional::NotCarryFlag)),
       0x34 => Some(Instruction::INCmem(MemoryTarget::HL)),
       0x35 => Some(Instruction::DECmem(MemoryTarget::HL)),
       0x37 => Some(Instruction::SCF()),
+      0x38 => Some(Instruction::JumpRn(Conditional::CarryFlag)),
       0x3C => Some(Instruction::INC(RegisterTarget::A)),
       0x3D => Some(Instruction::DEC(RegisterTarget::A)),
       0x3F => Some(Instruction::CCF()),
@@ -144,14 +166,32 @@ impl Instruction {
       0xBD => Some(Instruction::CP(RegisterTarget::L)),
       0xBE => Some(Instruction::CPmem(MemoryTarget::HL)),
       0xBF => Some(Instruction::CP(RegisterTarget::A)),
+      0xC0 => Some(Instruction::Return(Conditional::NotZeroFlag)),
+      0xC2 => Some(Instruction::JumpNN(Conditional::NotZeroFlag)),
+      0xC3 => Some(Instruction::JumpNN(Conditional::Unconditional)),
+      0xC4 => Some(Instruction::CallNN(Conditional::NotZeroFlag)),
       0xC6 => Some(Instruction::ADDn(Carry { include_carry: false })),
+      0xC7 => Some(Instruction::CallI(InvariantFunction::F00)),
+      0xC8 => Some(Instruction::JumpNN(Conditional::ZeroFlag)),
       0xCE => Some(Instruction::ADDn(Carry { include_carry: true })),
+      0xCF => Some(Instruction::CallI(InvariantFunction::F08)),
+      0xD0 => Some(Instruction::Return(Conditional::NotCarryFlag)),
+      0xD2 => Some(Instruction::JumpNN(Conditional::NotCarryFlag)),
+      0xD4 => Some(Instruction::CallNN(Conditional::NotCarryFlag)),
       0xD6 => Some(Instruction::SUBn(Carry { include_carry: false })),
+      0xD7 => Some(Instruction::CallI(InvariantFunction::F10)),
+      0xD8 => Some(Instruction::JumpNN(Conditional::CarryFlag)),
       0xDE => Some(Instruction::SUBn(Carry { include_carry: true })),
+      0xDF => Some(Instruction::CallI(InvariantFunction::F18)),
       0xE6 => Some(Instruction::ANDn()),
+      0xE7 => Some(Instruction::CallI(InvariantFunction::F20)),
       0xEE => Some(Instruction::XORn()),
+      0xE9 => Some(Instruction::JumpHL()),
+      0xEF => Some(Instruction::CallI(InvariantFunction::F28)),
       0xF6 => Some(Instruction::ORn()),
+      0xF7 => Some(Instruction::CallI(InvariantFunction::F30)),
       0xFE => Some(Instruction::CPn()),
+      0xFF => Some(Instruction::CallI(InvariantFunction::F38)),
       _ => /* TODO: Add mapping for rest of instructions */ None
     }
   }
