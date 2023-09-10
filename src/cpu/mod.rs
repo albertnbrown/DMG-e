@@ -41,6 +41,7 @@ impl CPU {
     // returns the number of machine cycles taken by the instruction
     fn execute(&mut self, instruction: Instruction) -> usize {
       match instruction {
+        Instruction::NOP() => { return 1; }
         Instruction::ADD(target, include_carry) => {
             let carry: u8 = if include_carry { self.registers.get_carry() } else { 0 };
             let value: u8 = self.get_register_target(target) + carry;

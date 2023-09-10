@@ -1,5 +1,6 @@
 pub enum Instruction {
   // non-prefixed instructions
+  NOP(), // does nothing
   ADD(RegisterTarget, bool), // add register target to register A with bool flag for including carry
   ADDmem(DoubleRegisterTarget, bool), // add value at memory target to register A with bool flag for including carry
   ADDn(bool), // add immediate byte to register A (increments pc) with bool flag for including carry
@@ -115,6 +116,7 @@ impl Instruction {
 
   fn from_byte_not_prefixed(byte: u8) -> Option<Instruction> {
     match byte {
+      0x00 => Some(Instruction::NOP()),
       0x01 => Some(Instruction::LoadRRNN(DoubleRegisterTarget::BC)),
       0x02 => Some(Instruction::LoadMemR(DoubleRegisterTarget::BC, RegisterTarget::A, PostOp::Nop)),
       0x03 => Some(Instruction::INC16(DoubleRegisterTarget::BC)),
