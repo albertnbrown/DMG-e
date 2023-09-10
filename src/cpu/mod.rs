@@ -261,7 +261,7 @@ impl CPU {
             self.set_register_target(destination, n);
             return 2;
         }
-        Instruction::LoadRmem(destination_register, memory_source, post_op) => {
+        Instruction::LoadRMem(destination_register, memory_source, post_op) => {
             let data = self.get_memory_target(memory_source);
             self.set_register_target(destination_register, data);
             self.do_post_op(memory_source, post_op);
