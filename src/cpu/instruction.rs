@@ -1,18 +1,24 @@
 pub enum Instruction {
   // non-prefixed instructions
-  ADD(RegisterTarget, bool), // add register target to register a with bool flag for including carry
-  ADDmem(DoubleRegisterTarget, bool), // add value at memory target to register a with bool flag for including carry
-  ADDn(bool), // add immediate byte to register a (increments pc) with bool flag for including carry
-  SUB(RegisterTarget, bool), // subtract register target from register a with bool flag for including carry
-  SUBmem(DoubleRegisterTarget, bool), // subtract value at memory target from register a with bool flag for including carry
-  SUBn(bool), // subtract immediate byte from register a (increments pc) with bool flag for including carry
+  ADD(RegisterTarget, bool), // add register target to register A with bool flag for including carry
+  ADDmem(DoubleRegisterTarget, bool), // add value at memory target to register A with bool flag for including carry
+  ADDn(bool), // add immediate byte to register A (increments pc) with bool flag for including carry
+  ADD16(DoubleRegisterTarget), // adds the double register to the double register HL
+  ADD16SP(), // adds the stack pointer to the double register HL
+  SUB(RegisterTarget, bool), // subtract register target from register A with bool flag for including carry
+  SUBmem(DoubleRegisterTarget, bool), // subtract value at memory target from register A with bool flag for including carry
+  SUBn(bool), // subtract immediate byte from register A (increments pc) with bool flag for including carry
   CP(RegisterTarget), // compares register target to register a
   CPmem(DoubleRegisterTarget), // compares value at memory target to register a
-  CPn(), // compares immediate byte to register a (increments pc)
+  CPn(), // compares immediate byte to register A (increments pc)
   INC(RegisterTarget), // increments register target
   INCmem(DoubleRegisterTarget), // increments value at memory target
+  INC16(DoubleRegisterTarget), // increment the 16 bit value in the double register
+  INCSP(), // increment the stack pointer
   DEC(RegisterTarget), // decrements register target
   DECmem(DoubleRegisterTarget), // decrements value at memory target
+  DEC16(DoubleRegisterTarget), // decrement the 16 bit value in the double register
+  DECSP(), // decrement the stack pointer
   AND(RegisterTarget), // logical & between register target and register a, store in register a
   ANDmem(DoubleRegisterTarget), // logical & between value at memory target and register a, store in register a
   ANDn(), // logical & between immediate byte and register a, store in register a
@@ -48,6 +54,7 @@ pub enum Instruction {
   LoadSPNN(), // put the immediate data nn into the stack pointer
   LoadSPRR(DoubleRegisterTarget), // set the stack pointer to the double register
   LoadRRSPn(DoubleRegisterTarget), // set the double register equal to the stack pointer plus the signed immediate data n
+  ADDSPn(), // adds the signed immediate data n to the stack pointer
   PushRR(DoubleRegisterTarget), // push the double register value to the stack
   PopRR(DoubleRegisterTarget), // pop from the stack to the double register
 
@@ -110,12 +117,15 @@ impl Instruction {
     match byte {
       0x01 => Some(Instruction::LoadRRNN(DoubleRegisterTarget::BC)),
       0x02 => Some(Instruction::LoadMemR(DoubleRegisterTarget::BC, RegisterTarget::A, PostOp::Nop)),
+      0x03 => Some(Instruction::INC16(DoubleRegisterTarget::BC)),
       0x04 => Some(Instruction::INC(RegisterTarget::B)),
       0x05 => Some(Instruction::DEC(RegisterTarget::B)),
       0x06 => Some(Instruction::LoadRN(RegisterTarget::B)),
       0x07 => Some(Instruction::LeftShift(ShiftOp::Rotate, RegisterTarget::A)),
       0x08 => Some(Instruction::LoadNNSP()),
+      0x09 => Some(Instruction::ADD16(DoubleRegisterTarget::BC)),
       0x0A => Some(Instruction::LoadRMem(RegisterTarget::A, DoubleRegisterTarget::BC, PostOp::Nop)),
+      0x0B => Some(Instruction::DEC16(DoubleRegisterTarget::BC)),
       0x0C => Some(Instruction::INC(RegisterTarget::C)),
       0x0D => Some(Instruction::DEC(RegisterTarget::C)),
       0x0E => Some(Instruction::LoadRN(RegisterTarget::C)),
@@ -123,12 +133,15 @@ impl Instruction {
       
       0x11 => Some(Instruction::LoadRRNN(DoubleRegisterTarget::DE)),
       0x12 => Some(Instruction::LoadMemR(DoubleRegisterTarget::DE, RegisterTarget::A, PostOp::Nop)),
+      0x13 => Some(Instruction::INC16(DoubleRegisterTarget::DE)),
       0x14 => Some(Instruction::INC(RegisterTarget::D)),
       0x15 => Some(Instruction::DEC(RegisterTarget::D)),
       0x16 => Some(Instruction::LoadRN(RegisterTarget::D)),
       0x17 => Some(Instruction::LeftShift(ShiftOp::IncludeCarry, RegisterTarget::A)),
       0x18 => Some(Instruction::JumpRn(Conditional::Unconditional)),
+      0x19 => Some(Instruction::ADD16(DoubleRegisterTarget::DE)),
       0x1A => Some(Instruction::LoadRMem(RegisterTarget::A, DoubleRegisterTarget::DE, PostOp::Nop)),
+      0x1B => Some(Instruction::DEC16(DoubleRegisterTarget::DE)),
       0x1C => Some(Instruction::INC(RegisterTarget::E)),
       0x1D => Some(Instruction::DEC(RegisterTarget::E)),
       0x1E => Some(Instruction::LoadRN(RegisterTarget::E)),
@@ -137,12 +150,15 @@ impl Instruction {
       0x20 => Some(Instruction::JumpRn(Conditional::NotZeroFlag)),
       0x21 => Some(Instruction::LoadRRNN(DoubleRegisterTarget::HL)),
       0x22 => Some(Instruction::LoadMemR(DoubleRegisterTarget::HL, RegisterTarget::A, PostOp::Increment)),
+      0x23 => Some(Instruction::INC16(DoubleRegisterTarget::HL)),
       0x24 => Some(Instruction::INC(RegisterTarget::H)),
       0x25 => Some(Instruction::DEC(RegisterTarget::H)),
       0x26 => Some(Instruction::LoadRN(RegisterTarget::H)),
       0x27 => Some(Instruction::DAA()),
       0x28 => Some(Instruction::JumpRn(Conditional::ZeroFlag)),
+      0x29 => Some(Instruction::ADD16(DoubleRegisterTarget::HL)),
       0x2A => Some(Instruction::LoadRMem(RegisterTarget::A, DoubleRegisterTarget::HL, PostOp::Increment)),
+      0x2B => Some(Instruction::DEC16(DoubleRegisterTarget::HL)),
       0x2C => Some(Instruction::INC(RegisterTarget::L)),
       0x2D => Some(Instruction::DEC(RegisterTarget::L)),
       0x2E => Some(Instruction::LoadRN(RegisterTarget::L)),
@@ -151,12 +167,15 @@ impl Instruction {
       0x30 => Some(Instruction::JumpRn(Conditional::NotCarryFlag)),
       0x31 => Some(Instruction::LoadSPNN()),
       0x32 => Some(Instruction::LoadMemR(DoubleRegisterTarget::HL, RegisterTarget::A, PostOp::Decrement)),
+      0x33 => Some(Instruction::INCSP()),
       0x34 => Some(Instruction::INCmem(DoubleRegisterTarget::HL)),
       0x35 => Some(Instruction::DECmem(DoubleRegisterTarget::HL)),
       0x36 => Some(Instruction::LoadMemN(DoubleRegisterTarget::HL)),
       0x37 => Some(Instruction::SCF()),
       0x38 => Some(Instruction::JumpRn(Conditional::CarryFlag)),
+      0x39 => Some(Instruction::ADD16SP()),
       0x3A => Some(Instruction::LoadRMem(RegisterTarget::A, DoubleRegisterTarget::HL, PostOp::Decrement)),
+      0x3B => Some(Instruction::DECSP()),
       0x3C => Some(Instruction::INC(RegisterTarget::A)),
       0x3D => Some(Instruction::DEC(RegisterTarget::A)),
       0x3E => Some(Instruction::LoadRN(RegisterTarget::A)),
@@ -327,6 +346,7 @@ impl Instruction {
       0xE5 => Some(Instruction::PushRR(DoubleRegisterTarget::HL)),
       0xE6 => Some(Instruction::ANDn()),
       0xE7 => Some(Instruction::CallI(InvariantFunction::F20)),
+      0xE8 => Some(Instruction::ADDSPn()),
       0xE9 => Some(Instruction::JumpHL()),
       0xEA => Some(Instruction::LoadNNR(RegisterTarget::A)),
       0xEE => Some(Instruction::XORn()),

@@ -59,6 +59,20 @@ impl CPU {
             self.registers.a = self.add(self.registers.a, value);
             return 2;
         }
+        Instruction::ADD16(source) => {
+            let value: u16 = self.get_double_register_target(source);
+            self.registers.l = self.add(self.registers.l, (value & 0x00FF) as u8);
+            let carry: u8 = self.registers.get_carry();
+            self.registers.h = self.add(self.registers.h, ((value & 0xFF00) >> 8) as u8 + carry);
+            return 2;
+        }
+        Instruction::ADD16SP() => {
+            let value: u16 = self.sp;
+            self.registers.l = self.add(self.registers.l, (value & 0x00FF) as u8);
+            let carry: u8 = self.registers.get_carry();
+            self.registers.h = self.add(self.registers.h, ((value & 0xFF00) >> 8) as u8 + carry);
+            return 2;
+        }
         Instruction::SUB(target, include_carry) => {
             let carry: u8 = if include_carry { self.registers.get_carry() } else { 0 };
             let value: u8 = self.get_register_target(target) + carry;
@@ -93,32 +107,56 @@ impl CPU {
             return 2;
         }
         Instruction::INC(target) => {
-            let carry = self.registers.get_carry(); // need to preserve carry value as this op does not change it
+            let carry: u8 = self.registers.get_carry(); // need to preserve carry value as this op does not change it
             let new_value: u8 = self.add(self.get_register_target(target), 1);
             if carry == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
             self.set_register_target(target, new_value);
             return 1;
         }
         Instruction::INCmem(target) => {
-            let carry = self.registers.get_carry(); // need to preserve carry value as this op does not change it
+            let carry: u8 = self.registers.get_carry(); // need to preserve carry value as this op does not change it
             let new_value: u8 = self.add(self.get_memory_target(target), 1);
             if carry == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
             self.set_memory_target(target, new_value);
             return 3;
         }
+        Instruction::INC16(target) => {
+            // we are not changing any of the flags
+            let (new_value, _) = self.get_double_register_target(target).overflowing_add(1);
+            self.set_double_register_target(target, new_value);
+            return 2;
+        }
+        Instruction::INCSP() => {
+            // we are not changing any of the flags
+            let (new_value, _) = self.sp.overflowing_add(1);
+            self.sp = new_value;
+            return 2;
+        }
         Instruction::DEC(target) => {
-            let carry = self.registers.get_carry(); // need to preserve carry value as this op does not change it
+            let carry: u8 = self.registers.get_carry(); // need to preserve carry value as this op does not change it
             let new_value: u8 = self.sub(self.get_register_target(target), 1);
             if carry == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
             self.set_register_target(target, new_value);
             return 1;
         }
         Instruction::DECmem(target) => {
-            let carry = self.registers.get_carry(); // need to preserve carry value as this op does not change it
+            let carry: u8 = self.registers.get_carry(); // need to preserve carry value as this op does not change it
             let new_value: u8 = self.sub(self.get_memory_target(target), 1);
             if carry == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
             self.set_memory_target(target, new_value);
             return 3;
+        }
+        Instruction::DEC16(target) => {
+            // we are not changing any of the flags
+            let (new_value, _) = self.get_double_register_target(target).overflowing_sub(1);
+            self.set_double_register_target(target, new_value);
+            return 2;
+        }
+        Instruction::DECSP() => {
+            // we are not changing any of the flags
+            let (new_value, _) = self.sp.overflowing_sub(1);
+            self.sp = new_value;
+            return 2;
         }
         Instruction::AND(target) => {
             self.registers.a = self.logical_and(self.registers.a, self.get_register_target(target));
@@ -129,7 +167,7 @@ impl CPU {
             return 2;
         }
         Instruction::ANDn() => {
-            let value = self.get_n(); // mutates pc so must be called separately
+            let value: u8 = self.get_n(); // mutates pc so must be called separately
             self.registers.a = self.logical_and(self.registers.a, value);
             return 2;
         }
@@ -142,7 +180,7 @@ impl CPU {
             return 2;
         }
         Instruction::XORn() => {
-            let value = self.get_n(); // mutates pc so must be called separately
+            let value: u8 = self.get_n(); // mutates pc so must be called separately
             self.registers.a = self.logical_xor(self.registers.a, value);
             return 2;
         }
@@ -155,7 +193,7 @@ impl CPU {
             return 2;
         }
         Instruction::ORn() => {
-            let value = self.get_n(); // mutates pc so must be called separately
+            let value: u8 = self.get_n(); // mutates pc so must be called separately
             self.registers.a = self.logical_or(self.registers.a, value);
             return 2;
         }
@@ -205,8 +243,8 @@ impl CPU {
         Instruction::JumpNN(condition) => {
             let mut cycles: usize = 3;
             // need to increment PC by geting outside the conditional
-            let new_location = self.get_nn();
-            let do_jump = self.check_conditional(condition);
+            let new_location: u16 = self.get_nn();
+            let do_jump: bool = self.check_conditional(condition);
             if do_jump {
                 self.pc = new_location;
                 cycles += 1;
@@ -220,8 +258,8 @@ impl CPU {
         Instruction::JumpRn(condition) => {
             let mut cycles: usize = 2;
             // need to increment PC by geting outside the conditional
-            let n = self.get_n();
-            let do_jump = self.check_conditional(condition);
+            let n: u8 = self.get_n();
+            let do_jump: bool = self.check_conditional(condition);
             if do_jump {
                 // parens make sure that PC only overflows if the instruction is bad
                 self.pc = ((self.pc as i32) + ((n as i32) + (i8::MIN as i32))) as u16;
@@ -231,8 +269,8 @@ impl CPU {
         }
         Instruction::CallNN(condition) => {
             let mut cycles: usize = 3;
-            let new_location = self.get_nn();
-            let do_call = self.check_conditional(condition);
+            let new_location: u16 = self.get_nn();
+            let do_call: bool = self.check_conditional(condition);
             if do_call {
                 self.push(self.pc);
                 self.pc = new_location;
@@ -242,7 +280,7 @@ impl CPU {
         }
         Instruction::Return(condition) => {
             let mut cycles: usize = 2;
-            let do_call = self.check_conditional(condition);
+            let do_call: bool = self.check_conditional(condition);
             if do_call {
                 self.pc =  self.pop();
                 match condition {
@@ -262,60 +300,60 @@ impl CPU {
             return 1;
         }
         Instruction::LoadRN(destination) => {
-            let n = self.get_n();
+            let n: u8 = self.get_n();
             self.set_register_target(destination, n);
             return 2;
         }
         Instruction::LoadRMem(destination_register, memory_source, post_op) => {
-            let data = self.get_memory_target(memory_source);
+            let data: u8 = self.get_memory_target(memory_source);
             self.set_register_target(destination_register, data);
             self.do_post_op(memory_source, post_op);
             return 2;
         }
         Instruction::LoadMemR(memory_destination, source_register, post_op) => {
-            let data = self.get_register_target(source_register);
+            let data: u8 = self.get_register_target(source_register);
             self.set_memory_target(memory_destination, data);
             self.do_post_op(memory_destination, post_op);
             return 2;
         }
         Instruction::LoadMemN(destination) => {
-            let n = self.get_n();
+            let n: u8 = self.get_n();
             self.set_memory_target(destination, n);
             return 3;
         }
         Instruction::LoadRNN(destination) => {
-            let nn = self.get_nn();
-            let data = self.memory.read_byte(nn);
+            let nn: u16 = self.get_nn();
+            let data: u8 = self.memory.read_byte(nn);
             self.set_register_target(destination, data);
             return 4;
         }
         Instruction::LoadNNR(source) => {
-            let nn = self.get_nn();
-            let data = self.get_register_target(source);
+            let nn: u16 = self.get_nn();
+            let data: u8 = self.get_register_target(source);
             self.memory.write_byte(nn, data);
             return 4;
         }
         Instruction::LoadRHighR(destination, offset) => {
-            let offset = self.get_register_target(offset);
-            let data = self.memory.read_byte(0xFF00_u16 + offset as u16);
+            let offset: u8 = self.get_register_target(offset);
+            let data: u8 = self.memory.read_byte(0xFF00_u16 + offset as u16);
             self.set_register_target(destination, data);
             return 2;
         }
         Instruction::LoadHighRR(offset, source) => {
             let offset: u8 = self.get_register_target(offset);
-            let data = self.get_register_target(source);
+            let data: u8 = self.get_register_target(source);
             self.memory.write_byte(0xFF00_u16 + offset as u16, data);
             return 2;
         }
         Instruction::LoadRHighN(destination) => {
-            let offset = self.get_n();
-            let data = self.memory.read_byte(0xFF00_u16 + offset as u16);
+            let offset: u8 = self.get_n();
+            let data: u8 = self.memory.read_byte(0xFF00_u16 + offset as u16);
             self.set_register_target(destination, data);
             return 3;
         }
         Instruction::LoadHighNR(source) => {
             let offset: u8 = self.get_n();
-            let data = self.get_register_target(source);
+            let data: u8 = self.get_register_target(source);
             self.memory.write_byte(0xFF00_u16 + offset as u16, data);
             return 3;
         }
@@ -340,18 +378,29 @@ impl CPU {
             return 2;
         }
         Instruction::LoadRRSPn(destination) => {
-            let n = self.get_n();
+            let n: u8 = self.get_n();
             // parens make sure that you never get overflow or underflow unless instruction is bad
-            let data = ((self.sp as i32) + ((i8::MIN as i32) + (n as i32))) as u16;
+            let data: u16 = ((self.sp as i32) + ((i8::MIN as i32) + (n as i32))) as u16;
             self.set_double_register_target(destination, data);
+            self.registers.clear_zero();
+            self.registers.clear_subtract();
             return 3;
+        }
+        Instruction::ADDSPn() => {
+            let n: u8 = self.get_n();
+            // parens make sure that you never get overflow or underflow unless instruction is bad
+            let new_value: u16 = ((self.sp as i32) + ((i8::MIN as i32) + (n as i32))) as u16;
+            self.sp = new_value;
+            self.registers.clear_zero();
+            self.registers.clear_subtract();
+            return 4;
         }
         Instruction::PushRR(source) => {
             self.push(self.get_double_register_target(source));
             return 4;
         }
         Instruction::PopRR(destination) => {
-            let data = self.pop();
+            let data: u16 = self.pop();
             self.set_double_register_target(destination, data);
             return 3;
         }
