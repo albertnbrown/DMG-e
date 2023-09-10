@@ -17,21 +17,25 @@ impl CPU {
     // returns the number of machine cycles taken by the step
     fn step(&mut self) -> usize {
         //fetch
-        let mut instruction_byte = self.memory.read_byte(self.pc);
+        let mut mem_cycles: usize = 0;
+        let mut instruction_byte: u8 = self.memory.read_byte(self.pc);
         self.pc += 1;
         let prefixed = instruction_byte == 0xCB;
         if prefixed {
             instruction_byte = self.memory.read_byte(self.pc); // pc has already been incremented
             self.pc += 1; // increment again to put in expected location
+            mem_cycles += 1;
         }
     
         // decode
         if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed) {
-          return self.execute(instruction);
+            mem_cycles += self.execute(instruction);
         } else {
           let description = format!("0x{}{:x}", if prefixed { "cb" } else { "" }, instruction_byte);
           panic!("Unkown instruction found for: {}", description)
         };
+
+        return mem_cycles;
     }
 
     // returns the number of machine cycles taken by the instruction
@@ -358,7 +362,7 @@ impl CPU {
             if target_value & bit_finder > 0 {
                 self.set_register_target(target, target_value - bit_finder);
             }
-            return 2;
+            return 1;
         }
         Instruction::ResetMem(bit_index, mem_target) => {
             if bit_index > 7 {panic!("bad bit index passed to Reset instruction");}
@@ -367,21 +371,21 @@ impl CPU {
             if target_value & bit_finder > 0 {
                 self.set_memory_target(mem_target, target_value - bit_finder);
             }
-            return 4;
+            return 3;
         }
         Instruction::Set(bit_index, target) => {
             if bit_index > 7 {panic!("bad bit index passed to Set instruction");}
             let bit_finder: u8 = 1 << bit_index;
             let target_value: u8 = self.get_register_target(target);
             self.set_register_target(target, target_value | bit_finder);
-            return 2;
+            return 1;
         }
         Instruction::SetMem(bit_index, target_address) => {
             if bit_index > 7 {panic!("bad bit index passed to Set instruction");}
             let bit_finder: u8 = 1 << bit_index;
             let target_value: u8 = self.get_memory_target(target_address);
             self.set_memory_target(target_address, target_value | bit_finder);
-            return 4;
+            return 3;
         }
         Instruction::BitCopy(bit_index, source) => {
             if bit_index > 7 {panic!("bad bit index passed to Bit Copy instruction");}
@@ -389,7 +393,7 @@ impl CPU {
             if self.get_register_target(source) & bit_finder > 0 {self.registers.clear_zero();} else {self.registers.flag_zero();}
             self.registers.clear_subtract();
             self.registers.flag_half_carry();
-            return 2;
+            return 1;
         }
         Instruction::BitCopyMem(bit_index, source_address) => {
             if bit_index > 7 {panic!("bad bit index passed to Bit Copy instruction");}
@@ -397,7 +401,7 @@ impl CPU {
             if self.get_memory_target(source_address) & bit_finder > 0 {self.registers.clear_zero();} else {self.registers.flag_zero();}
             self.registers.clear_subtract();
             self.registers.flag_half_carry();
-            return 3;
+            return 2;
         }
       }
     }
