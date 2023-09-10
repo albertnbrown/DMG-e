@@ -42,6 +42,13 @@ pub enum Instruction {
   LoadHighRR(RegisterTarget, RegisterTarget), // write to the memory in 0xFF00 + the value in the second register to the first register
   LoadRHighN(RegisterTarget), // write to the first register the data stored in 0xFF00 + n
   LoadHighNR(RegisterTarget), // write to the memory in 0xFF00 + n to the first register
+  LoadRRNN(DoubleRegisterTarget), // load nn into the double register
+  LoadNNSP(), // put the data at the stack pointer in the memory denoted at the register indexed by nn
+  LoadSPNN(), // put the immediate data nn into the stack pointer
+  LoadSPRR(DoubleRegisterTarget), // set the stack pointer to the double register
+  LoadRRSPn(DoubleRegisterTarget), // set the double register equal to the stack pointer plus the signed immediate data n
+  PushRR(DoubleRegisterTarget), // push the double register value to the stack
+  PopRR(DoubleRegisterTarget), // pop from the stack to the double register
 }
 
 pub struct Carry {
@@ -93,15 +100,18 @@ impl Instruction {
 
   fn from_byte_not_prefixed(byte: u8) -> Option<Instruction> {
     match byte {
+      0x01 => Some(Instruction::LoadRRNN(DoubleRegisterTarget::BC)),
       0x02 => Some(Instruction::LoadMemR(DoubleRegisterTarget::BC, RegisterTarget::A, PostOp::Nop)),
       0x04 => Some(Instruction::INC(RegisterTarget::B)),
       0x05 => Some(Instruction::DEC(RegisterTarget::B)),
       0x06 => Some(Instruction::LoadRN(RegisterTarget::B)),
+      0x08 => Some(Instruction::LoadNNSP()),
       0x0A => Some(Instruction::LoadRMem(RegisterTarget::A, DoubleRegisterTarget::BC, PostOp::Nop)),
       0x0C => Some(Instruction::INC(RegisterTarget::C)),
       0x0D => Some(Instruction::DEC(RegisterTarget::C)),
       0x0E => Some(Instruction::LoadRN(RegisterTarget::C)),
       
+      0x11 => Some(Instruction::LoadRRNN(DoubleRegisterTarget::DE)),
       0x12 => Some(Instruction::LoadMemR(DoubleRegisterTarget::DE, RegisterTarget::A, PostOp::Nop)),
       0x14 => Some(Instruction::INC(RegisterTarget::D)),
       0x15 => Some(Instruction::DEC(RegisterTarget::D)),
@@ -113,6 +123,7 @@ impl Instruction {
       0x1E => Some(Instruction::LoadRN(RegisterTarget::E)),
       
       0x20 => Some(Instruction::JumpRn(Conditional::NotZeroFlag)),
+      0x21 => Some(Instruction::LoadRRNN(DoubleRegisterTarget::HL)),
       0x22 => Some(Instruction::LoadMemR(DoubleRegisterTarget::HL, RegisterTarget::A, PostOp::Increment)),
       0x24 => Some(Instruction::INC(RegisterTarget::H)),
       0x25 => Some(Instruction::DEC(RegisterTarget::H)),
@@ -126,6 +137,7 @@ impl Instruction {
       0x2F => Some(Instruction::CPL()),
       
       0x30 => Some(Instruction::JumpRn(Conditional::NotCarryFlag)),
+      0x31 => Some(Instruction::LoadSPNN()),
       0x32 => Some(Instruction::LoadMemR(DoubleRegisterTarget::HL, RegisterTarget::A, PostOp::Decrement)),
       0x34 => Some(Instruction::INCmem(DoubleRegisterTarget::HL)),
       0x35 => Some(Instruction::DECmem(DoubleRegisterTarget::HL)),
@@ -275,9 +287,11 @@ impl Instruction {
       0xBF => Some(Instruction::CP(RegisterTarget::A)),
       
       0xC0 => Some(Instruction::Return(Conditional::NotZeroFlag)),
+      0xC1 => Some(Instruction::PopRR(DoubleRegisterTarget::BC)),
       0xC2 => Some(Instruction::JumpNN(Conditional::NotZeroFlag)),
       0xC3 => Some(Instruction::JumpNN(Conditional::Unconditional)),
       0xC4 => Some(Instruction::CallNN(Conditional::NotZeroFlag)),
+      0xC5 => Some(Instruction::PushRR(DoubleRegisterTarget::BC)),
       0xC6 => Some(Instruction::ADDn(Carry { include_carry: false })),
       0xC7 => Some(Instruction::CallI(InvariantFunction::F00)),
       0xC8 => Some(Instruction::JumpNN(Conditional::ZeroFlag)),
@@ -285,8 +299,10 @@ impl Instruction {
       0xCF => Some(Instruction::CallI(InvariantFunction::F08)),
       
       0xD0 => Some(Instruction::Return(Conditional::NotCarryFlag)),
+      0xD1 => Some(Instruction::PopRR(DoubleRegisterTarget::DE)),
       0xD2 => Some(Instruction::JumpNN(Conditional::NotCarryFlag)),
       0xD4 => Some(Instruction::CallNN(Conditional::NotCarryFlag)),
+      0xD5 => Some(Instruction::PushRR(DoubleRegisterTarget::DE)),
       0xD6 => Some(Instruction::SUBn(Carry { include_carry: false })),
       0xD7 => Some(Instruction::CallI(InvariantFunction::F10)),
       0xD8 => Some(Instruction::JumpNN(Conditional::CarryFlag)),
@@ -294,18 +310,24 @@ impl Instruction {
       0xDF => Some(Instruction::CallI(InvariantFunction::F18)),
       
       0xE0 => Some(Instruction::LoadHighNR(RegisterTarget::A)),
+      0xE1 => Some(Instruction::PopRR(DoubleRegisterTarget::HL)),
       0xE2 => Some(Instruction::LoadHighRR(RegisterTarget::C, RegisterTarget::A)),
+      0xE5 => Some(Instruction::PushRR(DoubleRegisterTarget::HL)),
       0xE6 => Some(Instruction::ANDn()),
       0xE7 => Some(Instruction::CallI(InvariantFunction::F20)),
-      0xEE => Some(Instruction::XORn()),
       0xE9 => Some(Instruction::JumpHL()),
       0xEA => Some(Instruction::LoadNNR(RegisterTarget::A)),
+      0xEE => Some(Instruction::XORn()),
       0xEF => Some(Instruction::CallI(InvariantFunction::F28)),
       
       0xF0 => Some(Instruction::LoadRHighN(RegisterTarget::A)),
+      0xF1 => Some(Instruction::PopRR(DoubleRegisterTarget::AF)),
       0xF2 => Some(Instruction::LoadRHighR(RegisterTarget::A, RegisterTarget::C)),
+      0xF5 => Some(Instruction::PushRR(DoubleRegisterTarget::AF)),
       0xF6 => Some(Instruction::ORn()),
       0xF7 => Some(Instruction::CallI(InvariantFunction::F30)),
+      0xF8 => Some(Instruction::LoadRRSPn(DoubleRegisterTarget::HL)),
+      0xF9 => Some(Instruction::LoadSPRR(DoubleRegisterTarget::HL)),
       0xFA => Some(Instruction::LoadRNN(RegisterTarget::A)),
       0xFE => Some(Instruction::CPn()),
       0xFF => Some(Instruction::CallI(InvariantFunction::F38)),

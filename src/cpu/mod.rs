@@ -219,7 +219,8 @@ impl CPU {
             let n = self.get_n();
             let do_jump = self.check_conditional(condition);
             if do_jump {
-                self.pc = (((self.pc + (n as u16)) as i32) + (i8::MIN as i32)) as u16;
+                // parens make sure that PC only overflows if the instruction is bad
+                self.pc = ((self.pc as i32) + ((n as i32) + (i8::MIN as i32))) as u16;
                 cycles += 1;
             }
             return cycles;
@@ -312,6 +313,42 @@ impl CPU {
             let offset: u8 = self.get_n();
             let data = self.get_register_target(source);
             self.memory.write_byte(0xFF00_u16 + offset as u16, data);
+            return 3;
+        }
+        Instruction::LoadRRNN(destination) => {
+            let data = self.get_nn();
+            self.set_double_register_target(destination, data);
+            return 3;
+        }
+        Instruction::LoadNNSP() => {
+            let destination = self.get_nn();
+            self.memory.write_byte(destination, (self.sp & 0x00FF) as u8);
+            self.memory.write_byte(destination + 1, (self.sp & 0xFF00) as u8);
+            return 5;
+        }
+        Instruction::LoadSPNN() => {
+            let data = self.get_nn();
+            self.sp = data;
+            return 3;
+        }
+        Instruction::LoadSPRR(source) => {
+            self.sp = self.get_double_register_target(source);
+            return 2;
+        }
+        Instruction::LoadRRSPn(destination) => {
+            let n = self.get_n();
+            // parens make sure that you never get overflow or underflow unless instruction is bad
+            let data = ((self.sp as i32) + ((i8::MIN as i32) + (n as i32))) as u16;
+            self.set_double_register_target(destination, data);
+            return 3;
+        }
+        Instruction::PushRR(source) => {
+            self.push(self.get_double_register_target(source));
+            return 4;
+        }
+        Instruction::PopRR(destination) => {
+            let data = self.pop();
+            self.set_double_register_target(destination, data);
             return 3;
         }
       }
@@ -581,6 +618,7 @@ impl CPU {
     
     // applies the post op to the byte in memory at the location specified by the double register enum
     fn do_post_op(&mut self, target: DoubleRegisterTarget, post_op: PostOp) {
+        // we don't use add and sub here because we're not setting flags
         let data = self.get_memory_target(target);
         match post_op {
             PostOp::Nop => {
