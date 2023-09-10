@@ -56,6 +56,8 @@ pub enum Instruction {
   ResetMem(u8, DoubleRegisterTarget), // set the bit indexed by the first parameter on the byte in memory indexed by the double register to zero
   Set(u8, RegisterTarget), // set the bit indexed by the first parameter on the register target to one
   SetMem(u8, DoubleRegisterTarget), // set the bit indexed by the first parameter on the byte in memory indexed by the double register to one
+  BitCopy(u8, RegisterTarget), // copy the complement of the bit indexed by the first parameter of the register target into the zero flag
+  BitCopyMem(u8, DoubleRegisterTarget), // copy the complement of the bit indexed by the first parameter of the byte in memory indexed by the double register into the zero flag
 }
 
 pub struct Carry {
@@ -337,6 +339,74 @@ impl Instruction {
 
   fn from_byte_prefixed(byte: u8) -> Option<Instruction> {
     match byte {
+      0x40 => Some(Instruction::BitCopy(0, RegisterTarget::B)),
+      0x41 => Some(Instruction::BitCopy(0, RegisterTarget::C)),
+      0x42 => Some(Instruction::BitCopy(0, RegisterTarget::D)),
+      0x43 => Some(Instruction::BitCopy(0, RegisterTarget::E)),
+      0x44 => Some(Instruction::BitCopy(0, RegisterTarget::H)),
+      0x45 => Some(Instruction::BitCopy(0, RegisterTarget::L)),
+      0x46 => Some(Instruction::BitCopyMem(0, DoubleRegisterTarget::HL)),
+      0x47 => Some(Instruction::BitCopy(0, RegisterTarget::A)),
+      0x48 => Some(Instruction::BitCopy(1, RegisterTarget::B)),
+      0x49 => Some(Instruction::BitCopy(1, RegisterTarget::C)),
+      0x4A => Some(Instruction::BitCopy(1, RegisterTarget::D)),
+      0x4B => Some(Instruction::BitCopy(1, RegisterTarget::E)),
+      0x4C => Some(Instruction::BitCopy(1, RegisterTarget::H)),
+      0x4D => Some(Instruction::BitCopy(1, RegisterTarget::L)),
+      0x4E => Some(Instruction::BitCopyMem(1, DoubleRegisterTarget::HL)),
+      0x4F => Some(Instruction::BitCopy(1, RegisterTarget::A)),
+
+      0x50 => Some(Instruction::BitCopy(2, RegisterTarget::B)),
+      0x51 => Some(Instruction::BitCopy(2, RegisterTarget::C)),
+      0x52 => Some(Instruction::BitCopy(2, RegisterTarget::D)),
+      0x53 => Some(Instruction::BitCopy(2, RegisterTarget::E)),
+      0x54 => Some(Instruction::BitCopy(2, RegisterTarget::H)),
+      0x55 => Some(Instruction::BitCopy(2, RegisterTarget::L)),
+      0x56 => Some(Instruction::BitCopyMem(2, DoubleRegisterTarget::HL)),
+      0x57 => Some(Instruction::BitCopy(2, RegisterTarget::A)),
+      0x58 => Some(Instruction::BitCopy(3, RegisterTarget::B)),
+      0x59 => Some(Instruction::BitCopy(3, RegisterTarget::C)),
+      0x5A => Some(Instruction::BitCopy(3, RegisterTarget::D)),
+      0x5B => Some(Instruction::BitCopy(3, RegisterTarget::E)),
+      0x5C => Some(Instruction::BitCopy(3, RegisterTarget::H)),
+      0x5D => Some(Instruction::BitCopy(3, RegisterTarget::L)),
+      0x5E => Some(Instruction::BitCopyMem(3, DoubleRegisterTarget::HL)),
+      0x5F => Some(Instruction::BitCopy(3, RegisterTarget::A)),
+
+      0x60 => Some(Instruction::BitCopy(4, RegisterTarget::B)),
+      0x61 => Some(Instruction::BitCopy(4, RegisterTarget::C)),
+      0x62 => Some(Instruction::BitCopy(4, RegisterTarget::D)),
+      0x63 => Some(Instruction::BitCopy(4, RegisterTarget::E)),
+      0x64 => Some(Instruction::BitCopy(4, RegisterTarget::H)),
+      0x65 => Some(Instruction::BitCopy(4, RegisterTarget::L)),
+      0x66 => Some(Instruction::BitCopyMem(4, DoubleRegisterTarget::HL)),
+      0x67 => Some(Instruction::BitCopy(4, RegisterTarget::A)),
+      0x68 => Some(Instruction::BitCopy(5, RegisterTarget::B)),
+      0x69 => Some(Instruction::BitCopy(5, RegisterTarget::C)),
+      0x6A => Some(Instruction::BitCopy(5, RegisterTarget::D)),
+      0x6B => Some(Instruction::BitCopy(5, RegisterTarget::E)),
+      0x6C => Some(Instruction::BitCopy(5, RegisterTarget::H)),
+      0x6D => Some(Instruction::BitCopy(5, RegisterTarget::L)),
+      0x6E => Some(Instruction::BitCopyMem(5, DoubleRegisterTarget::HL)),
+      0x6F => Some(Instruction::BitCopy(5, RegisterTarget::A)),
+
+      0x70 => Some(Instruction::BitCopy(6, RegisterTarget::B)),
+      0x71 => Some(Instruction::BitCopy(6, RegisterTarget::C)),
+      0x72 => Some(Instruction::BitCopy(6, RegisterTarget::D)),
+      0x73 => Some(Instruction::BitCopy(6, RegisterTarget::E)),
+      0x74 => Some(Instruction::BitCopy(6, RegisterTarget::H)),
+      0x75 => Some(Instruction::BitCopy(6, RegisterTarget::L)),
+      0x76 => Some(Instruction::BitCopyMem(6, DoubleRegisterTarget::HL)),
+      0x77 => Some(Instruction::BitCopy(6, RegisterTarget::A)),
+      0x78 => Some(Instruction::BitCopy(7, RegisterTarget::B)),
+      0x79 => Some(Instruction::BitCopy(7, RegisterTarget::C)),
+      0x7A => Some(Instruction::BitCopy(7, RegisterTarget::D)),
+      0x7B => Some(Instruction::BitCopy(7, RegisterTarget::E)),
+      0x7C => Some(Instruction::BitCopy(7, RegisterTarget::H)),
+      0x7D => Some(Instruction::BitCopy(7, RegisterTarget::L)),
+      0x7E => Some(Instruction::BitCopyMem(7, DoubleRegisterTarget::HL)),
+      0x7F => Some(Instruction::BitCopy(7, RegisterTarget::A)),
+      
       0x80 => Some(Instruction::Reset(0, RegisterTarget::B)),
       0x81 => Some(Instruction::Reset(0, RegisterTarget::C)),
       0x82 => Some(Instruction::Reset(0, RegisterTarget::D)),

@@ -370,18 +370,34 @@ impl CPU {
             return 4;
         }
         Instruction::Set(bit_index, target) => {
-            if bit_index > 7 {panic!("bad bit index passed to Reset instruction");}
+            if bit_index > 7 {panic!("bad bit index passed to Set instruction");}
             let bit_finder: u8 = 1 << bit_index;
             let target_value: u8 = self.get_register_target(target);
             self.set_register_target(target, target_value | bit_finder);
             return 2;
         }
-        Instruction::SetMem(bit_index, mem_target) => {
-            if bit_index > 7 {panic!("bad bit index passed to Reset instruction");}
+        Instruction::SetMem(bit_index, target_address) => {
+            if bit_index > 7 {panic!("bad bit index passed to Set instruction");}
             let bit_finder: u8 = 1 << bit_index;
-            let target_value: u8 = self.get_memory_target(mem_target);
-            self.set_memory_target(mem_target, target_value | bit_finder);
+            let target_value: u8 = self.get_memory_target(target_address);
+            self.set_memory_target(target_address, target_value | bit_finder);
             return 4;
+        }
+        Instruction::BitCopy(bit_index, source) => {
+            if bit_index > 7 {panic!("bad bit index passed to Bit Copy instruction");}
+            let bit_finder: u8 = 1 << bit_index;
+            if self.get_register_target(source) & bit_finder > 0 {self.registers.clear_zero();} else {self.registers.flag_zero();}
+            self.registers.clear_subtract();
+            self.registers.flag_half_carry();
+            return 2;
+        }
+        Instruction::BitCopyMem(bit_index, source_address) => {
+            if bit_index > 7 {panic!("bad bit index passed to Bit Copy instruction");}
+            let bit_finder: u8 = 1 << bit_index;
+            if self.get_memory_target(source_address) & bit_finder > 0 {self.registers.clear_zero();} else {self.registers.flag_zero();}
+            self.registers.clear_subtract();
+            self.registers.flag_half_carry();
+            return 3;
         }
       }
     }
