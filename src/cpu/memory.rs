@@ -7,7 +7,7 @@ impl Memory {
         self.memory[address as usize]
     }
 
-    pub fn set_byte(&mut self, address: u16, value: u8) {
+    pub fn write_byte(&mut self, address: u16, value: u8) {
         self.memory[address as usize] = value;
     }
 }

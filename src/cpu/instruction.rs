@@ -1,25 +1,25 @@
 pub enum Instruction {
   ADD(RegisterTarget, Carry), // add register target to register a
-  ADDmem(MemoryTarget, Carry), // add value at memory target to register a (only implements for HL)
+  ADDmem(DoubleRegisterTarget, Carry), // add value at memory target to register a (only implements for HL)
   ADDn(Carry), // add immediate byte to register a (increments pc)
   SUB(RegisterTarget, Carry), // subtract register target from register a
-  SUBmem(MemoryTarget, Carry), // subtract value at memory target from register a (only implements for HL)
+  SUBmem(DoubleRegisterTarget, Carry), // subtract value at memory target from register a (only implements for HL)
   SUBn(Carry), // subtract immediate byte from register a (increments pc)
   CP(RegisterTarget), // compares register target to register a
-  CPmem(MemoryTarget), // compares value at memory target to register a (only implements for HL)
+  CPmem(DoubleRegisterTarget), // compares value at memory target to register a (only implements for HL)
   CPn(), // compares immediate byte to register a (increments pc)
   INC(RegisterTarget), // increments register target
-  INCmem(MemoryTarget), // increments value at memory target
+  INCmem(DoubleRegisterTarget), // increments value at memory target
   DEC(RegisterTarget), // decrements register target
-  DECmem(MemoryTarget), // decrements value at memory target
+  DECmem(DoubleRegisterTarget), // decrements value at memory target
   AND(RegisterTarget), // logical & between register target and register a, store in register a
-  ANDmem(MemoryTarget), // logical & between value at memory target and register a, store in register a
+  ANDmem(DoubleRegisterTarget), // logical & between value at memory target and register a, store in register a
   ANDn(), // logical & between immediate byte and register a, store in register a
   XOR(RegisterTarget), // logical ^ between register target and register a, store in register a
-  XORmem(MemoryTarget), // logical ^ between value at memory target and register a, store in register a
+  XORmem(DoubleRegisterTarget), // logical ^ between value at memory target and register a, store in register a
   XORn(), // logical ^ between immediate byte and register a, store in register a
   OR(RegisterTarget), // logical | between register target and register a, store in register a
-  ORmem(MemoryTarget), // logical | between value at memory target and register a, store in register a
+  ORmem(DoubleRegisterTarget), // logical | between value at memory target and register a, store in register a
   ORn(), // logical | between immediate byte and register a, store in register a
   CCF(), // flip carry flag
   SCF(), // set carry flag to true
@@ -31,10 +31,25 @@ pub enum Instruction {
   CallNN(Conditional), // push pc to stack and jump to nn
   Return(Conditional), // pop a pc from the stack and jump to it
   CallI(InvariantFunction), // pop a pc from the stack and jump to it
+  LoadRR(RegisterTarget, RegisterTarget), // load data from the second register into the first register
+  LoadRN(RegisterTarget), // load the immediate data n into the specified register
+  LoadRmem(RegisterTarget, DoubleRegisterTarget, PostOp), // load the data at the memory target into the specified register and then perform postop on memory target
+  LoadMemR(DoubleRegisterTarget, RegisterTarget, PostOp), // write the data in the register to the memory target and then perform postop on memory target
+  LoadMemN(DoubleRegisterTarget), // write the data in n to the memory target
+  LoadRNN(RegisterTarget), // write the data in the memory specified by nn to the register target
+  LoadNNR(RegisterTarget), // write the data the register target to the memory specified by nn
+  LoadRHighR(RegisterTarget, RegisterTarget), // write to the first register the data stored in 0xFF00 + the value in the second register
+  LoadHighRR(RegisterTarget, RegisterTarget), // write to the memory in 0xFF00 + the value in the second register to the first register
+  LoadRHighN(RegisterTarget), // write to the first register the data stored in 0xFF00 + n
+  LoadHighNR(RegisterTarget), // write to the memory in 0xFF00 + n to the first register
 }
 
 pub struct Carry {
   pub include_carry: bool,
+}
+
+pub enum PostOp {
+  Nop, Increment, Decrement,
 }
 
 #[derive(Clone, Copy)]
@@ -56,7 +71,7 @@ pub enum RegisterTarget {
 }
 
 #[derive(Clone, Copy)]
-pub enum MemoryTarget {
+pub enum DoubleRegisterTarget {
   AF, BC, DE, HL,
 }
 
@@ -96,8 +111,8 @@ impl Instruction {
       0x2D => Some(Instruction::DEC(RegisterTarget::L)),
       0x2F => Some(Instruction::CPL()),
       0x30 => Some(Instruction::JumpRn(Conditional::NotCarryFlag)),
-      0x34 => Some(Instruction::INCmem(MemoryTarget::HL)),
-      0x35 => Some(Instruction::DECmem(MemoryTarget::HL)),
+      0x34 => Some(Instruction::INCmem(DoubleRegisterTarget::HL)),
+      0x35 => Some(Instruction::DECmem(DoubleRegisterTarget::HL)),
       0x37 => Some(Instruction::SCF()),
       0x38 => Some(Instruction::JumpRn(Conditional::CarryFlag)),
       0x3C => Some(Instruction::INC(RegisterTarget::A)),
@@ -109,7 +124,7 @@ impl Instruction {
       0x83 => Some(Instruction::ADD(RegisterTarget::E, Carry {include_carry: false})),
       0x84 => Some(Instruction::ADD(RegisterTarget::H, Carry {include_carry: false})),
       0x85 => Some(Instruction::ADD(RegisterTarget::L, Carry {include_carry: false})),
-      0x86 => Some(Instruction::ADDmem(MemoryTarget::HL, Carry {include_carry: false})),
+      0x86 => Some(Instruction::ADDmem(DoubleRegisterTarget::HL, Carry {include_carry: false})),
       0x87 => Some(Instruction::ADD(RegisterTarget::A, Carry {include_carry: false})),
       0x88 => Some(Instruction::ADD(RegisterTarget::B, Carry {include_carry: true})),
       0x89 => Some(Instruction::ADD(RegisterTarget::C, Carry {include_carry: true})),
@@ -117,7 +132,7 @@ impl Instruction {
       0x8B => Some(Instruction::ADD(RegisterTarget::E, Carry {include_carry: true})),
       0x8C => Some(Instruction::ADD(RegisterTarget::H, Carry {include_carry: true})),
       0x8D => Some(Instruction::ADD(RegisterTarget::L, Carry {include_carry: true})),
-      0x8E => Some(Instruction::ADDmem(MemoryTarget::HL, Carry {include_carry: true})),
+      0x8E => Some(Instruction::ADDmem(DoubleRegisterTarget::HL, Carry {include_carry: true})),
       0x8F => Some(Instruction::ADD(RegisterTarget::A, Carry {include_carry: true})),
       0x90 => Some(Instruction::SUB(RegisterTarget::B, Carry {include_carry: false})),
       0x91 => Some(Instruction::SUB(RegisterTarget::C, Carry {include_carry: false})),
@@ -125,7 +140,7 @@ impl Instruction {
       0x93 => Some(Instruction::SUB(RegisterTarget::E, Carry {include_carry: false})),
       0x94 => Some(Instruction::SUB(RegisterTarget::H, Carry {include_carry: false})),
       0x95 => Some(Instruction::SUB(RegisterTarget::L, Carry {include_carry: false})),
-      0x96 => Some(Instruction::SUBmem(MemoryTarget::HL, Carry {include_carry: false})),
+      0x96 => Some(Instruction::SUBmem(DoubleRegisterTarget::HL, Carry {include_carry: false})),
       0x97 => Some(Instruction::SUB(RegisterTarget::A, Carry {include_carry: false})),
       0x98 => Some(Instruction::SUB(RegisterTarget::B, Carry {include_carry: true})),
       0x99 => Some(Instruction::SUB(RegisterTarget::C, Carry {include_carry: true})),
@@ -133,7 +148,7 @@ impl Instruction {
       0x9B => Some(Instruction::SUB(RegisterTarget::E, Carry {include_carry: true})),
       0x9C => Some(Instruction::SUB(RegisterTarget::H, Carry {include_carry: true})),
       0x9D => Some(Instruction::SUB(RegisterTarget::L, Carry {include_carry: true})),
-      0x9E => Some(Instruction::SUBmem(MemoryTarget::HL, Carry {include_carry: true})),
+      0x9E => Some(Instruction::SUBmem(DoubleRegisterTarget::HL, Carry {include_carry: true})),
       0x9F => Some(Instruction::SUB(RegisterTarget::A, Carry {include_carry: true})),
       0xA0 => Some(Instruction::AND(RegisterTarget::B)),
       0xA1 => Some(Instruction::AND(RegisterTarget::C)),
@@ -141,7 +156,7 @@ impl Instruction {
       0xA3 => Some(Instruction::AND(RegisterTarget::E)),
       0xA4 => Some(Instruction::AND(RegisterTarget::H)),
       0xA5 => Some(Instruction::AND(RegisterTarget::L)),
-      0xA6 => Some(Instruction::ANDmem(MemoryTarget::HL)),
+      0xA6 => Some(Instruction::ANDmem(DoubleRegisterTarget::HL)),
       0xA7 => Some(Instruction::AND(RegisterTarget::A)),
       0xA8 => Some(Instruction::XOR(RegisterTarget::B)),
       0xA9 => Some(Instruction::XOR(RegisterTarget::C)),
@@ -149,7 +164,7 @@ impl Instruction {
       0xAB => Some(Instruction::XOR(RegisterTarget::E)),
       0xAC => Some(Instruction::XOR(RegisterTarget::H)),
       0xAD => Some(Instruction::XOR(RegisterTarget::L)),
-      0xAE => Some(Instruction::XORmem(MemoryTarget::HL)),
+      0xAE => Some(Instruction::XORmem(DoubleRegisterTarget::HL)),
       0xAF => Some(Instruction::XOR(RegisterTarget::A)),
       0xB0 => Some(Instruction::OR(RegisterTarget::B)),
       0xB1 => Some(Instruction::OR(RegisterTarget::C)),
@@ -157,7 +172,7 @@ impl Instruction {
       0xB3 => Some(Instruction::OR(RegisterTarget::E)),
       0xB4 => Some(Instruction::OR(RegisterTarget::H)),
       0xB5 => Some(Instruction::OR(RegisterTarget::L)),
-      0xB6 => Some(Instruction::ORmem(MemoryTarget::HL)),
+      0xB6 => Some(Instruction::ORmem(DoubleRegisterTarget::HL)),
       0xB7 => Some(Instruction::OR(RegisterTarget::A)),
       0xB8 => Some(Instruction::CP(RegisterTarget::B)),
       0xB9 => Some(Instruction::CP(RegisterTarget::C)),
@@ -165,7 +180,7 @@ impl Instruction {
       0xBB => Some(Instruction::CP(RegisterTarget::E)),
       0xBC => Some(Instruction::CP(RegisterTarget::H)),
       0xBD => Some(Instruction::CP(RegisterTarget::L)),
-      0xBE => Some(Instruction::CPmem(MemoryTarget::HL)),
+      0xBE => Some(Instruction::CPmem(DoubleRegisterTarget::HL)),
       0xBF => Some(Instruction::CP(RegisterTarget::A)),
       0xC0 => Some(Instruction::Return(Conditional::NotZeroFlag)),
       0xC2 => Some(Instruction::JumpNN(Conditional::NotZeroFlag)),
