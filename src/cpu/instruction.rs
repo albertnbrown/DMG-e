@@ -1,13 +1,13 @@
 pub enum Instruction {
   // non-prefixed instructions
-  ADD(RegisterTarget, Carry), // add register target to register a
-  ADDmem(DoubleRegisterTarget, Carry), // add value at memory target to register a (only implements for HL)
-  ADDn(Carry), // add immediate byte to register a (increments pc)
-  SUB(RegisterTarget, Carry), // subtract register target from register a
-  SUBmem(DoubleRegisterTarget, Carry), // subtract value at memory target from register a (only implements for HL)
-  SUBn(Carry), // subtract immediate byte from register a (increments pc)
+  ADD(RegisterTarget, bool), // add register target to register a with bool flag for including carry
+  ADDmem(DoubleRegisterTarget, bool), // add value at memory target to register a with bool flag for including carry
+  ADDn(bool), // add immediate byte to register a (increments pc) with bool flag for including carry
+  SUB(RegisterTarget, bool), // subtract register target from register a with bool flag for including carry
+  SUBmem(DoubleRegisterTarget, bool), // subtract value at memory target from register a with bool flag for including carry
+  SUBn(bool), // subtract immediate byte from register a (increments pc) with bool flag for including carry
   CP(RegisterTarget), // compares register target to register a
-  CPmem(DoubleRegisterTarget), // compares value at memory target to register a (only implements for HL)
+  CPmem(DoubleRegisterTarget), // compares value at memory target to register a
   CPn(), // compares immediate byte to register a (increments pc)
   INC(RegisterTarget), // increments register target
   INCmem(DoubleRegisterTarget), // increments value at memory target
@@ -58,10 +58,6 @@ pub enum Instruction {
   SetMem(u8, DoubleRegisterTarget), // set the bit indexed by the first parameter on the byte in memory indexed by the double register to one
   BitCopy(u8, RegisterTarget), // copy the complement of the bit indexed by the first parameter of the register target into the zero flag
   BitCopyMem(u8, DoubleRegisterTarget), // copy the complement of the bit indexed by the first parameter of the byte in memory indexed by the double register into the zero flag
-}
-
-pub struct Carry {
-  pub include_carry: bool,
 }
 
 pub enum PostOp {
@@ -220,39 +216,39 @@ impl Instruction {
       0x7E => Some(Instruction::LoadRMem(RegisterTarget::L, DoubleRegisterTarget::HL, PostOp::Nop)),
       0x7F => Some(Instruction::LoadRR(RegisterTarget::L, RegisterTarget::A)),
 
-      0x80 => Some(Instruction::ADD(RegisterTarget::B, Carry {include_carry: false})),
-      0x81 => Some(Instruction::ADD(RegisterTarget::C, Carry {include_carry: false})),
-      0x82 => Some(Instruction::ADD(RegisterTarget::D, Carry {include_carry: false})),
-      0x83 => Some(Instruction::ADD(RegisterTarget::E, Carry {include_carry: false})),
-      0x84 => Some(Instruction::ADD(RegisterTarget::H, Carry {include_carry: false})),
-      0x85 => Some(Instruction::ADD(RegisterTarget::L, Carry {include_carry: false})),
-      0x86 => Some(Instruction::ADDmem(DoubleRegisterTarget::HL, Carry {include_carry: false})),
-      0x87 => Some(Instruction::ADD(RegisterTarget::A, Carry {include_carry: false})),
-      0x88 => Some(Instruction::ADD(RegisterTarget::B, Carry {include_carry: true})),
-      0x89 => Some(Instruction::ADD(RegisterTarget::C, Carry {include_carry: true})),
-      0x8A => Some(Instruction::ADD(RegisterTarget::D, Carry {include_carry: true})),
-      0x8B => Some(Instruction::ADD(RegisterTarget::E, Carry {include_carry: true})),
-      0x8C => Some(Instruction::ADD(RegisterTarget::H, Carry {include_carry: true})),
-      0x8D => Some(Instruction::ADD(RegisterTarget::L, Carry {include_carry: true})),
-      0x8E => Some(Instruction::ADDmem(DoubleRegisterTarget::HL, Carry {include_carry: true})),
-      0x8F => Some(Instruction::ADD(RegisterTarget::A, Carry {include_carry: true})),
+      0x80 => Some(Instruction::ADD(RegisterTarget::B, false)),
+      0x81 => Some(Instruction::ADD(RegisterTarget::C, false)),
+      0x82 => Some(Instruction::ADD(RegisterTarget::D, false)),
+      0x83 => Some(Instruction::ADD(RegisterTarget::E, false)),
+      0x84 => Some(Instruction::ADD(RegisterTarget::H, false)),
+      0x85 => Some(Instruction::ADD(RegisterTarget::L, false)),
+      0x86 => Some(Instruction::ADDmem(DoubleRegisterTarget::HL, false)),
+      0x87 => Some(Instruction::ADD(RegisterTarget::A, false)),
+      0x88 => Some(Instruction::ADD(RegisterTarget::B, true)),
+      0x89 => Some(Instruction::ADD(RegisterTarget::C, true)),
+      0x8A => Some(Instruction::ADD(RegisterTarget::D, true)),
+      0x8B => Some(Instruction::ADD(RegisterTarget::E, true)),
+      0x8C => Some(Instruction::ADD(RegisterTarget::H, true)),
+      0x8D => Some(Instruction::ADD(RegisterTarget::L, true)),
+      0x8E => Some(Instruction::ADDmem(DoubleRegisterTarget::HL, true)),
+      0x8F => Some(Instruction::ADD(RegisterTarget::A, true)),
       
-      0x90 => Some(Instruction::SUB(RegisterTarget::B, Carry {include_carry: false})),
-      0x91 => Some(Instruction::SUB(RegisterTarget::C, Carry {include_carry: false})),
-      0x92 => Some(Instruction::SUB(RegisterTarget::D, Carry {include_carry: false})),
-      0x93 => Some(Instruction::SUB(RegisterTarget::E, Carry {include_carry: false})),
-      0x94 => Some(Instruction::SUB(RegisterTarget::H, Carry {include_carry: false})),
-      0x95 => Some(Instruction::SUB(RegisterTarget::L, Carry {include_carry: false})),
-      0x96 => Some(Instruction::SUBmem(DoubleRegisterTarget::HL, Carry {include_carry: false})),
-      0x97 => Some(Instruction::SUB(RegisterTarget::A, Carry {include_carry: false})),
-      0x98 => Some(Instruction::SUB(RegisterTarget::B, Carry {include_carry: true})),
-      0x99 => Some(Instruction::SUB(RegisterTarget::C, Carry {include_carry: true})),
-      0x9A => Some(Instruction::SUB(RegisterTarget::D, Carry {include_carry: true})),
-      0x9B => Some(Instruction::SUB(RegisterTarget::E, Carry {include_carry: true})),
-      0x9C => Some(Instruction::SUB(RegisterTarget::H, Carry {include_carry: true})),
-      0x9D => Some(Instruction::SUB(RegisterTarget::L, Carry {include_carry: true})),
-      0x9E => Some(Instruction::SUBmem(DoubleRegisterTarget::HL, Carry {include_carry: true})),
-      0x9F => Some(Instruction::SUB(RegisterTarget::A, Carry {include_carry: true})),
+      0x90 => Some(Instruction::SUB(RegisterTarget::B, false)),
+      0x91 => Some(Instruction::SUB(RegisterTarget::C, false)),
+      0x92 => Some(Instruction::SUB(RegisterTarget::D, false)),
+      0x93 => Some(Instruction::SUB(RegisterTarget::E, false)),
+      0x94 => Some(Instruction::SUB(RegisterTarget::H, false)),
+      0x95 => Some(Instruction::SUB(RegisterTarget::L, false)),
+      0x96 => Some(Instruction::SUBmem(DoubleRegisterTarget::HL, false)),
+      0x97 => Some(Instruction::SUB(RegisterTarget::A, false)),
+      0x98 => Some(Instruction::SUB(RegisterTarget::B, true)),
+      0x99 => Some(Instruction::SUB(RegisterTarget::C, true)),
+      0x9A => Some(Instruction::SUB(RegisterTarget::D, true)),
+      0x9B => Some(Instruction::SUB(RegisterTarget::E, true)),
+      0x9C => Some(Instruction::SUB(RegisterTarget::H, true)),
+      0x9D => Some(Instruction::SUB(RegisterTarget::L, true)),
+      0x9E => Some(Instruction::SUBmem(DoubleRegisterTarget::HL, true)),
+      0x9F => Some(Instruction::SUB(RegisterTarget::A, true)),
       
       0xA0 => Some(Instruction::AND(RegisterTarget::B)),
       0xA1 => Some(Instruction::AND(RegisterTarget::C)),
@@ -294,10 +290,10 @@ impl Instruction {
       0xC3 => Some(Instruction::JumpNN(Conditional::Unconditional)),
       0xC4 => Some(Instruction::CallNN(Conditional::NotZeroFlag)),
       0xC5 => Some(Instruction::PushRR(DoubleRegisterTarget::BC)),
-      0xC6 => Some(Instruction::ADDn(Carry { include_carry: false })),
+      0xC6 => Some(Instruction::ADDn(false)),
       0xC7 => Some(Instruction::CallI(InvariantFunction::F00)),
       0xC8 => Some(Instruction::JumpNN(Conditional::ZeroFlag)),
-      0xCE => Some(Instruction::ADDn(Carry { include_carry: true })),
+      0xCE => Some(Instruction::ADDn(true)),
       0xCF => Some(Instruction::CallI(InvariantFunction::F08)),
       
       0xD0 => Some(Instruction::Return(Conditional::NotCarryFlag)),
@@ -305,10 +301,10 @@ impl Instruction {
       0xD2 => Some(Instruction::JumpNN(Conditional::NotCarryFlag)),
       0xD4 => Some(Instruction::CallNN(Conditional::NotCarryFlag)),
       0xD5 => Some(Instruction::PushRR(DoubleRegisterTarget::DE)),
-      0xD6 => Some(Instruction::SUBn(Carry { include_carry: false })),
+      0xD6 => Some(Instruction::SUBn(false)),
       0xD7 => Some(Instruction::CallI(InvariantFunction::F10)),
       0xD8 => Some(Instruction::JumpNN(Conditional::CarryFlag)),
-      0xDE => Some(Instruction::SUBn(Carry { include_carry: true })),
+      0xDE => Some(Instruction::SUBn(true)),
       0xDF => Some(Instruction::CallI(InvariantFunction::F18)),
       
       0xE0 => Some(Instruction::LoadHighNR(RegisterTarget::A)),

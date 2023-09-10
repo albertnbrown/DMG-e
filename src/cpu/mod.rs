@@ -41,38 +41,38 @@ impl CPU {
     // returns the number of machine cycles taken by the instruction
     fn execute(&mut self, instruction: Instruction) -> usize {
       match instruction {
-        Instruction::ADD(target, carry_flag) => {
-            let carry: u8 = if carry_flag.include_carry { self.registers.get_carry() } else { 0 };
+        Instruction::ADD(target, include_carry) => {
+            let carry: u8 = if include_carry { self.registers.get_carry() } else { 0 };
             let value: u8 = self.get_register_target(target) + carry;
             self.registers.a = self.add(self.registers.a, value);
             return 1;
         }
-        Instruction::ADDmem(target, carry_flag) => {
-            let carry: u8 = if carry_flag.include_carry { self.registers.get_carry() } else { 0 };
+        Instruction::ADDmem(target, include_carry) => {
+            let carry: u8 = if include_carry { self.registers.get_carry() } else { 0 };
             let value: u8 = self.get_memory_target(target) + carry;
             self.registers.a = self.add(self.registers.a, value);
             return 2;
         }
-        Instruction::ADDn(carry_flag) => {
-            let carry: u8 = if carry_flag.include_carry { self.registers.get_carry() } else { 0 };
+        Instruction::ADDn(include_carry) => {
+            let carry: u8 = if include_carry { self.registers.get_carry() } else { 0 };
             let value: u8 = self.get_n() + carry;
             self.registers.a = self.add(self.registers.a, value);
             return 2;
         }
-        Instruction::SUB(target, carry_flag) => {
-            let carry: u8 = if carry_flag.include_carry { self.registers.get_carry() } else { 0 };
+        Instruction::SUB(target, include_carry) => {
+            let carry: u8 = if include_carry { self.registers.get_carry() } else { 0 };
             let value: u8 = self.get_register_target(target) + carry;
             self.registers.a = self.sub(self.registers.a, value);
             return 1;
         }
-        Instruction::SUBmem(target, carry_flag) => {
-            let carry: u8 = if carry_flag.include_carry { self.registers.get_carry() } else { 0 };
+        Instruction::SUBmem(target, include_carry) => {
+            let carry: u8 = if include_carry { self.registers.get_carry() } else { 0 };
             let value: u8 = self.get_memory_target(target) + carry;
             self.registers.a = self.sub(self.registers.a, value);
             return 2;
         }
-        Instruction::SUBn(carry_flag) => {
-            let carry: u8 = if carry_flag.include_carry { self.registers.get_carry() } else { 0 };
+        Instruction::SUBn(include_carry) => {
+            let carry: u8 = if include_carry { self.registers.get_carry() } else { 0 };
             let value: u8 = self.get_n() + carry;
             self.registers.a = self.sub(self.registers.a, value);
             return 2;
