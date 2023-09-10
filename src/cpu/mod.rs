@@ -351,6 +351,38 @@ impl CPU {
             self.set_double_register_target(destination, data);
             return 3;
         }
+        Instruction::Reset(bit_index, target) => {
+            if bit_index > 7 {panic!("bad bit index passed to Reset instruction");}
+            let bit_finder: u8 = 1 << bit_index;
+            let target_value: u8 = self.get_register_target(target);
+            if target_value & bit_finder > 0 {
+                self.set_register_target(target, target_value - bit_finder);
+            }
+            return 2;
+        }
+        Instruction::ResetMem(bit_index, mem_target) => {
+            if bit_index > 7 {panic!("bad bit index passed to Reset instruction");}
+            let bit_finder: u8 = 1 << bit_index;
+            let target_value: u8 = self.get_memory_target(mem_target);
+            if target_value & bit_finder > 0 {
+                self.set_memory_target(mem_target, target_value - bit_finder);
+            }
+            return 4;
+        }
+        Instruction::Set(bit_index, target) => {
+            if bit_index > 7 {panic!("bad bit index passed to Reset instruction");}
+            let bit_finder: u8 = 1 << bit_index;
+            let target_value: u8 = self.get_register_target(target);
+            self.set_register_target(target, target_value | bit_finder);
+            return 2;
+        }
+        Instruction::SetMem(bit_index, mem_target) => {
+            if bit_index > 7 {panic!("bad bit index passed to Reset instruction");}
+            let bit_finder: u8 = 1 << bit_index;
+            let target_value: u8 = self.get_memory_target(mem_target);
+            self.set_memory_target(mem_target, target_value | bit_finder);
+            return 4;
+        }
       }
     }
 

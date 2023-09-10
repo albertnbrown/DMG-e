@@ -1,4 +1,5 @@
 pub enum Instruction {
+  // non-prefixed instructions
   ADD(RegisterTarget, Carry), // add register target to register a
   ADDmem(DoubleRegisterTarget, Carry), // add value at memory target to register a (only implements for HL)
   ADDn(Carry), // add immediate byte to register a (increments pc)
@@ -49,6 +50,12 @@ pub enum Instruction {
   LoadRRSPn(DoubleRegisterTarget), // set the double register equal to the stack pointer plus the signed immediate data n
   PushRR(DoubleRegisterTarget), // push the double register value to the stack
   PopRR(DoubleRegisterTarget), // pop from the stack to the double register
+
+  // prefixed instructions
+  Reset(u8, RegisterTarget), // set the bit indexed by the first parameter on the register target to zero
+  ResetMem(u8, DoubleRegisterTarget), // set the bit indexed by the first parameter on the byte in memory indexed by the double register to zero
+  Set(u8, RegisterTarget), // set the bit indexed by the first parameter on the register target to one
+  SetMem(u8, DoubleRegisterTarget), // set the bit indexed by the first parameter on the byte in memory indexed by the double register to one
 }
 
 pub struct Carry {
@@ -88,13 +95,6 @@ impl Instruction {
       Instruction::from_byte_prefixed(byte)
     } else {
       Instruction::from_byte_not_prefixed(byte)
-    }
-  }
-
-  fn from_byte_prefixed(byte: u8) -> Option<Instruction> {
-    match byte {
-      // 0x00 => Some(Instruction::RLC(PrefixTarget::B)),
-      _ => /* TODO: Add mapping for rest of instructions */ None
     }
   }
 
@@ -331,6 +331,147 @@ impl Instruction {
       0xFA => Some(Instruction::LoadRNN(RegisterTarget::A)),
       0xFE => Some(Instruction::CPn()),
       0xFF => Some(Instruction::CallI(InvariantFunction::F38)),
+      _ => None
+    }
+  }
+
+  fn from_byte_prefixed(byte: u8) -> Option<Instruction> {
+    match byte {
+      0x80 => Some(Instruction::Reset(0, RegisterTarget::B)),
+      0x81 => Some(Instruction::Reset(0, RegisterTarget::C)),
+      0x82 => Some(Instruction::Reset(0, RegisterTarget::D)),
+      0x83 => Some(Instruction::Reset(0, RegisterTarget::E)),
+      0x84 => Some(Instruction::Reset(0, RegisterTarget::H)),
+      0x85 => Some(Instruction::Reset(0, RegisterTarget::L)),
+      0x86 => Some(Instruction::ResetMem(0, DoubleRegisterTarget::HL)),
+      0x87 => Some(Instruction::Reset(0, RegisterTarget::A)),
+      0x88 => Some(Instruction::Reset(1, RegisterTarget::B)),
+      0x89 => Some(Instruction::Reset(1, RegisterTarget::C)),
+      0x8A => Some(Instruction::Reset(1, RegisterTarget::D)),
+      0x8B => Some(Instruction::Reset(1, RegisterTarget::E)),
+      0x8C => Some(Instruction::Reset(1, RegisterTarget::H)),
+      0x8D => Some(Instruction::Reset(1, RegisterTarget::L)),
+      0x8E => Some(Instruction::ResetMem(1, DoubleRegisterTarget::HL)),
+      0x8F => Some(Instruction::Reset(1, RegisterTarget::A)),
+
+      0x90 => Some(Instruction::Reset(2, RegisterTarget::B)),
+      0x91 => Some(Instruction::Reset(2, RegisterTarget::C)),
+      0x92 => Some(Instruction::Reset(2, RegisterTarget::D)),
+      0x93 => Some(Instruction::Reset(2, RegisterTarget::E)),
+      0x94 => Some(Instruction::Reset(2, RegisterTarget::H)),
+      0x95 => Some(Instruction::Reset(2, RegisterTarget::L)),
+      0x96 => Some(Instruction::ResetMem(2, DoubleRegisterTarget::HL)),
+      0x97 => Some(Instruction::Reset(2, RegisterTarget::A)),
+      0x98 => Some(Instruction::Reset(3, RegisterTarget::B)),
+      0x99 => Some(Instruction::Reset(3, RegisterTarget::C)),
+      0x9A => Some(Instruction::Reset(3, RegisterTarget::D)),
+      0x9B => Some(Instruction::Reset(3, RegisterTarget::E)),
+      0x9C => Some(Instruction::Reset(3, RegisterTarget::H)),
+      0x9D => Some(Instruction::Reset(3, RegisterTarget::L)),
+      0x9E => Some(Instruction::ResetMem(3, DoubleRegisterTarget::HL)),
+      0x9F => Some(Instruction::Reset(3, RegisterTarget::A)),
+
+      0xA0 => Some(Instruction::Reset(4, RegisterTarget::B)),
+      0xA1 => Some(Instruction::Reset(4, RegisterTarget::C)),
+      0xA2 => Some(Instruction::Reset(4, RegisterTarget::D)),
+      0xA3 => Some(Instruction::Reset(4, RegisterTarget::E)),
+      0xA4 => Some(Instruction::Reset(4, RegisterTarget::H)),
+      0xA5 => Some(Instruction::Reset(4, RegisterTarget::L)),
+      0xA6 => Some(Instruction::ResetMem(4, DoubleRegisterTarget::HL)),
+      0xA7 => Some(Instruction::Reset(4, RegisterTarget::A)),
+      0xA8 => Some(Instruction::Reset(5, RegisterTarget::B)),
+      0xA9 => Some(Instruction::Reset(5, RegisterTarget::C)),
+      0xAA => Some(Instruction::Reset(5, RegisterTarget::D)),
+      0xAB => Some(Instruction::Reset(5, RegisterTarget::E)),
+      0xAC => Some(Instruction::Reset(5, RegisterTarget::H)),
+      0xAD => Some(Instruction::Reset(5, RegisterTarget::L)),
+      0xAE => Some(Instruction::ResetMem(5, DoubleRegisterTarget::HL)),
+      0xAF => Some(Instruction::Reset(5, RegisterTarget::A)),
+
+      0xB0 => Some(Instruction::Reset(6, RegisterTarget::B)),
+      0xB1 => Some(Instruction::Reset(6, RegisterTarget::C)),
+      0xB2 => Some(Instruction::Reset(6, RegisterTarget::D)),
+      0xB3 => Some(Instruction::Reset(6, RegisterTarget::E)),
+      0xB4 => Some(Instruction::Reset(6, RegisterTarget::H)),
+      0xB5 => Some(Instruction::Reset(6, RegisterTarget::L)),
+      0xB6 => Some(Instruction::ResetMem(6, DoubleRegisterTarget::HL)),
+      0xB7 => Some(Instruction::Reset(6, RegisterTarget::A)),
+      0xB8 => Some(Instruction::Reset(7, RegisterTarget::B)),
+      0xB9 => Some(Instruction::Reset(7, RegisterTarget::C)),
+      0xBA => Some(Instruction::Reset(7, RegisterTarget::D)),
+      0xBB => Some(Instruction::Reset(7, RegisterTarget::E)),
+      0xBC => Some(Instruction::Reset(7, RegisterTarget::H)),
+      0xBD => Some(Instruction::Reset(7, RegisterTarget::L)),
+      0xBE => Some(Instruction::ResetMem(7, DoubleRegisterTarget::HL)),
+      0xBF => Some(Instruction::Reset(7, RegisterTarget::A)),
+      
+      0xC0 => Some(Instruction::Set(0, RegisterTarget::B)),
+      0xC1 => Some(Instruction::Set(0, RegisterTarget::C)),
+      0xC2 => Some(Instruction::Set(0, RegisterTarget::D)),
+      0xC3 => Some(Instruction::Set(0, RegisterTarget::E)),
+      0xC4 => Some(Instruction::Set(0, RegisterTarget::H)),
+      0xC5 => Some(Instruction::Set(0, RegisterTarget::L)),
+      0xC6 => Some(Instruction::SetMem(0, DoubleRegisterTarget::HL)),
+      0xC7 => Some(Instruction::Set(0, RegisterTarget::A)),
+      0xC8 => Some(Instruction::Set(1, RegisterTarget::B)),
+      0xCA => Some(Instruction::Set(1, RegisterTarget::D)),
+      0xCB => Some(Instruction::Set(1, RegisterTarget::E)),
+      0xCC => Some(Instruction::Set(1, RegisterTarget::H)),
+      0xCD => Some(Instruction::Set(1, RegisterTarget::L)),
+      0xCE => Some(Instruction::SetMem(1, DoubleRegisterTarget::HL)),
+      0xCF => Some(Instruction::Set(1, RegisterTarget::A)),
+
+      0xD0 => Some(Instruction::Set(2, RegisterTarget::B)),
+      0xD1 => Some(Instruction::Set(2, RegisterTarget::C)),
+      0xD2 => Some(Instruction::Set(2, RegisterTarget::D)),
+      0xD3 => Some(Instruction::Set(2, RegisterTarget::E)),
+      0xD4 => Some(Instruction::Set(2, RegisterTarget::H)),
+      0xD5 => Some(Instruction::Set(2, RegisterTarget::L)),
+      0xD6 => Some(Instruction::SetMem(2, DoubleRegisterTarget::HL)),
+      0xD7 => Some(Instruction::Set(2, RegisterTarget::A)),
+      0xD8 => Some(Instruction::Set(3, RegisterTarget::B)),
+      0xD9 => Some(Instruction::Set(3, RegisterTarget::C)),
+      0xDA => Some(Instruction::Set(3, RegisterTarget::D)),
+      0xDB => Some(Instruction::Set(3, RegisterTarget::E)),
+      0xDC => Some(Instruction::Set(3, RegisterTarget::H)),
+      0xDD => Some(Instruction::Set(3, RegisterTarget::L)),
+      0xDE => Some(Instruction::SetMem(3, DoubleRegisterTarget::HL)),
+      0xDF => Some(Instruction::Set(3, RegisterTarget::A)),
+
+      0xE0 => Some(Instruction::Set(4, RegisterTarget::B)),
+      0xE1 => Some(Instruction::Set(4, RegisterTarget::C)),
+      0xE2 => Some(Instruction::Set(4, RegisterTarget::D)),
+      0xE3 => Some(Instruction::Set(4, RegisterTarget::E)),
+      0xE4 => Some(Instruction::Set(4, RegisterTarget::H)),
+      0xE5 => Some(Instruction::Set(4, RegisterTarget::L)),
+      0xE6 => Some(Instruction::SetMem(4, DoubleRegisterTarget::HL)),
+      0xE7 => Some(Instruction::Set(4, RegisterTarget::A)),
+      0xE8 => Some(Instruction::Set(5, RegisterTarget::B)),
+      0xE9 => Some(Instruction::Set(5, RegisterTarget::C)),
+      0xEA => Some(Instruction::Set(5, RegisterTarget::D)),
+      0xEB => Some(Instruction::Set(5, RegisterTarget::E)),
+      0xEC => Some(Instruction::Set(5, RegisterTarget::H)),
+      0xED => Some(Instruction::Set(5, RegisterTarget::L)),
+      0xEE => Some(Instruction::SetMem(5, DoubleRegisterTarget::HL)),
+      0xEF => Some(Instruction::Set(5, RegisterTarget::A)),
+
+      0xF0 => Some(Instruction::Set(6, RegisterTarget::B)),
+      0xF1 => Some(Instruction::Set(6, RegisterTarget::C)),
+      0xF2 => Some(Instruction::Set(6, RegisterTarget::D)),
+      0xF3 => Some(Instruction::Set(6, RegisterTarget::E)),
+      0xF4 => Some(Instruction::Set(6, RegisterTarget::H)),
+      0xF5 => Some(Instruction::Set(6, RegisterTarget::L)),
+      0xF6 => Some(Instruction::SetMem(6, DoubleRegisterTarget::HL)),
+      0xF7 => Some(Instruction::Set(6, RegisterTarget::A)),
+      0xF8 => Some(Instruction::Set(7, RegisterTarget::B)),
+      0xF9 => Some(Instruction::Set(7, RegisterTarget::C)),
+      0xFA => Some(Instruction::Set(7, RegisterTarget::D)),
+      0xFB => Some(Instruction::Set(7, RegisterTarget::E)),
+      0xFC => Some(Instruction::Set(7, RegisterTarget::H)),
+      0xFD => Some(Instruction::Set(7, RegisterTarget::L)),
+      0xFE => Some(Instruction::SetMem(7, DoubleRegisterTarget::HL)),
+      0xFF => Some(Instruction::Set(7, RegisterTarget::A)),
+
       _ => None
     }
   }
