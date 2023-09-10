@@ -58,14 +58,20 @@ pub enum Instruction {
   SetMem(u8, DoubleRegisterTarget), // set the bit indexed by the first parameter on the byte in memory indexed by the double register to one
   BitCopy(u8, RegisterTarget), // copy the complement of the bit indexed by the first parameter of the register target into the zero flag
   BitCopyMem(u8, DoubleRegisterTarget), // copy the complement of the bit indexed by the first parameter of the byte in memory indexed by the double register into the zero flag
-  LeftShift(bool, bool, RegisterTarget), // first flag is for shifting in the carry, second is for rotate or not, acts on the register target
-  LeftShiftMem(bool, bool, DoubleRegisterTarget), // first flag is for shifting in the carry, second is for rotate or not, acts on the memory at the double register address
-  RightShift(bool, bool, RegisterTarget), // first flag is for shifting in the carry, second is for rotate or not, acts on the register target
-  RightShiftMem(bool, bool, DoubleRegisterTarget), // first flag is for shifting in the carry, second is for rotate or not, acts on the memory at the double register address
+  LeftShift(ShiftOp, RegisterTarget), // shift acts on the register target
+  LeftShiftMem(ShiftOp, DoubleRegisterTarget), // shift acts on the memory at the double register address
+  RightShift(ShiftOp, RegisterTarget), // shift acts on the register target
+  RightShiftMem(ShiftOp, DoubleRegisterTarget), // shift acts on the memory at the double register address
+  Swap(RegisterTarget), // swaps first 4 bits for last 4 bits in the register
+  SwapMem(DoubleRegisterTarget), // swaps first 4 bits for last 4 bits in the 
 }
 
 pub enum PostOp {
   Nop, Increment, Decrement,
+}
+
+pub enum ShiftOp {
+  Rotate, IncludeCarry, Arithmetic, Logical
 }
 
 #[derive(Clone, Copy)]
@@ -107,26 +113,26 @@ impl Instruction {
       0x04 => Some(Instruction::INC(RegisterTarget::B)),
       0x05 => Some(Instruction::DEC(RegisterTarget::B)),
       0x06 => Some(Instruction::LoadRN(RegisterTarget::B)),
-      0x07 => Some(Instruction::LeftShift(false, true, RegisterTarget::A)),
+      0x07 => Some(Instruction::LeftShift(ShiftOp::Rotate, RegisterTarget::A)),
       0x08 => Some(Instruction::LoadNNSP()),
       0x0A => Some(Instruction::LoadRMem(RegisterTarget::A, DoubleRegisterTarget::BC, PostOp::Nop)),
       0x0C => Some(Instruction::INC(RegisterTarget::C)),
       0x0D => Some(Instruction::DEC(RegisterTarget::C)),
       0x0E => Some(Instruction::LoadRN(RegisterTarget::C)),
-      0x0F => Some(Instruction::RightShift(false, true, RegisterTarget::A)),
+      0x0F => Some(Instruction::RightShift(ShiftOp::Rotate, RegisterTarget::A)),
       
       0x11 => Some(Instruction::LoadRRNN(DoubleRegisterTarget::DE)),
       0x12 => Some(Instruction::LoadMemR(DoubleRegisterTarget::DE, RegisterTarget::A, PostOp::Nop)),
       0x14 => Some(Instruction::INC(RegisterTarget::D)),
       0x15 => Some(Instruction::DEC(RegisterTarget::D)),
       0x16 => Some(Instruction::LoadRN(RegisterTarget::D)),
-      0x17 => Some(Instruction::LeftShift(true, false, RegisterTarget::A)),
+      0x17 => Some(Instruction::LeftShift(ShiftOp::IncludeCarry, RegisterTarget::A)),
       0x18 => Some(Instruction::JumpRn(Conditional::Unconditional)),
       0x1A => Some(Instruction::LoadRMem(RegisterTarget::A, DoubleRegisterTarget::DE, PostOp::Nop)),
       0x1C => Some(Instruction::INC(RegisterTarget::E)),
       0x1D => Some(Instruction::DEC(RegisterTarget::E)),
       0x1E => Some(Instruction::LoadRN(RegisterTarget::E)),
-      0x1F => Some(Instruction::RightShift(true, false, RegisterTarget::A)),
+      0x1F => Some(Instruction::RightShift(ShiftOp::IncludeCarry, RegisterTarget::A)),
       
       0x20 => Some(Instruction::JumpRn(Conditional::NotZeroFlag)),
       0x21 => Some(Instruction::LoadRRNN(DoubleRegisterTarget::HL)),
@@ -343,56 +349,73 @@ impl Instruction {
 
   fn from_byte_prefixed(byte: u8) -> Option<Instruction> {
     match byte {
-      0x00 => Some(Instruction::LeftShift(false, true, RegisterTarget::B)),
-      0x01 => Some(Instruction::LeftShift(false, true, RegisterTarget::C)),
-      0x02 => Some(Instruction::LeftShift(false, true, RegisterTarget::D)),
-      0x03 => Some(Instruction::LeftShift(false, true, RegisterTarget::E)),
-      0x04 => Some(Instruction::LeftShift(false, true, RegisterTarget::H)),
-      0x05 => Some(Instruction::LeftShift(false, true, RegisterTarget::L)),
-      0x06 => Some(Instruction::LeftShiftMem(false, true, DoubleRegisterTarget::HL)),
-      0x07 => Some(Instruction::LeftShift(false, true, RegisterTarget::A)),
-      0x08 => Some(Instruction::RightShift(false, true, RegisterTarget::B)),
-      0x09 => Some(Instruction::RightShift(false, true, RegisterTarget::C)),
-      0x0A => Some(Instruction::RightShift(false, true, RegisterTarget::D)),
-      0x0B => Some(Instruction::RightShift(false, true, RegisterTarget::E)),
-      0x0C => Some(Instruction::RightShift(false, true, RegisterTarget::H)),
-      0x0D => Some(Instruction::RightShift(false, true, RegisterTarget::L)),
-      0x0E => Some(Instruction::RightShiftMem(false, true, DoubleRegisterTarget::HL)),
-      0x0F => Some(Instruction::RightShift(false, true, RegisterTarget::A)),
+      0x00 => Some(Instruction::LeftShift(ShiftOp::Rotate, RegisterTarget::B)),
+      0x01 => Some(Instruction::LeftShift(ShiftOp::Rotate, RegisterTarget::C)),
+      0x02 => Some(Instruction::LeftShift(ShiftOp::Rotate, RegisterTarget::D)),
+      0x03 => Some(Instruction::LeftShift(ShiftOp::Rotate, RegisterTarget::E)),
+      0x04 => Some(Instruction::LeftShift(ShiftOp::Rotate, RegisterTarget::H)),
+      0x05 => Some(Instruction::LeftShift(ShiftOp::Rotate, RegisterTarget::L)),
+      0x06 => Some(Instruction::LeftShiftMem(ShiftOp::Rotate, DoubleRegisterTarget::HL)),
+      0x07 => Some(Instruction::LeftShift(ShiftOp::Rotate, RegisterTarget::A)),
+      0x08 => Some(Instruction::RightShift(ShiftOp::Rotate, RegisterTarget::B)),
+      0x09 => Some(Instruction::RightShift(ShiftOp::Rotate, RegisterTarget::C)),
+      0x0A => Some(Instruction::RightShift(ShiftOp::Rotate, RegisterTarget::D)),
+      0x0B => Some(Instruction::RightShift(ShiftOp::Rotate, RegisterTarget::E)),
+      0x0C => Some(Instruction::RightShift(ShiftOp::Rotate, RegisterTarget::H)),
+      0x0D => Some(Instruction::RightShift(ShiftOp::Rotate, RegisterTarget::L)),
+      0x0E => Some(Instruction::RightShiftMem(ShiftOp::Rotate, DoubleRegisterTarget::HL)),
+      0x0F => Some(Instruction::RightShift(ShiftOp::Rotate, RegisterTarget::A)),
 
-      0x10 => Some(Instruction::LeftShift(true, false, RegisterTarget::B)),
-      0x11 => Some(Instruction::LeftShift(true, false, RegisterTarget::C)),
-      0x12 => Some(Instruction::LeftShift(true, false, RegisterTarget::D)),
-      0x13 => Some(Instruction::LeftShift(true, false, RegisterTarget::E)),
-      0x14 => Some(Instruction::LeftShift(true, false, RegisterTarget::H)),
-      0x15 => Some(Instruction::LeftShift(true, false, RegisterTarget::L)),
-      0x16 => Some(Instruction::LeftShiftMem(true, false, DoubleRegisterTarget::HL)),
-      0x17 => Some(Instruction::LeftShift(true, false, RegisterTarget::A)),
-      0x18 => Some(Instruction::RightShift(true, false, RegisterTarget::B)),
-      0x19 => Some(Instruction::RightShift(true, false, RegisterTarget::C)),
-      0x1A => Some(Instruction::RightShift(true, false, RegisterTarget::D)),
-      0x1B => Some(Instruction::RightShift(true, false, RegisterTarget::E)),
-      0x1C => Some(Instruction::RightShift(true, false, RegisterTarget::H)),
-      0x1D => Some(Instruction::RightShift(true, false, RegisterTarget::L)),
-      0x1E => Some(Instruction::RightShiftMem(true, false, DoubleRegisterTarget::HL)),
-      0x1F => Some(Instruction::RightShift(true, false, RegisterTarget::A)),
+      0x10 => Some(Instruction::LeftShift(ShiftOp::IncludeCarry, RegisterTarget::B)),
+      0x11 => Some(Instruction::LeftShift(ShiftOp::IncludeCarry, RegisterTarget::C)),
+      0x12 => Some(Instruction::LeftShift(ShiftOp::IncludeCarry, RegisterTarget::D)),
+      0x13 => Some(Instruction::LeftShift(ShiftOp::IncludeCarry, RegisterTarget::E)),
+      0x14 => Some(Instruction::LeftShift(ShiftOp::IncludeCarry, RegisterTarget::H)),
+      0x15 => Some(Instruction::LeftShift(ShiftOp::IncludeCarry, RegisterTarget::L)),
+      0x16 => Some(Instruction::LeftShiftMem(ShiftOp::IncludeCarry, DoubleRegisterTarget::HL)),
+      0x17 => Some(Instruction::LeftShift(ShiftOp::IncludeCarry, RegisterTarget::A)),
+      0x18 => Some(Instruction::RightShift(ShiftOp::IncludeCarry, RegisterTarget::B)),
+      0x19 => Some(Instruction::RightShift(ShiftOp::IncludeCarry, RegisterTarget::C)),
+      0x1A => Some(Instruction::RightShift(ShiftOp::IncludeCarry, RegisterTarget::D)),
+      0x1B => Some(Instruction::RightShift(ShiftOp::IncludeCarry, RegisterTarget::E)),
+      0x1C => Some(Instruction::RightShift(ShiftOp::IncludeCarry, RegisterTarget::H)),
+      0x1D => Some(Instruction::RightShift(ShiftOp::IncludeCarry, RegisterTarget::L)),
+      0x1E => Some(Instruction::RightShiftMem(ShiftOp::IncludeCarry, DoubleRegisterTarget::HL)),
+      0x1F => Some(Instruction::RightShift(ShiftOp::IncludeCarry, RegisterTarget::A)),
 
-      0x20 => Some(Instruction::LeftShift(false, false, RegisterTarget::B)),
-      0x21 => Some(Instruction::LeftShift(false, false, RegisterTarget::C)),
-      0x22 => Some(Instruction::LeftShift(false, false, RegisterTarget::D)),
-      0x23 => Some(Instruction::LeftShift(false, false, RegisterTarget::E)),
-      0x24 => Some(Instruction::LeftShift(false, false, RegisterTarget::H)),
-      0x25 => Some(Instruction::LeftShift(false, false, RegisterTarget::L)),
-      0x26 => Some(Instruction::LeftShiftMem(false, false, DoubleRegisterTarget::HL)),
-      0x27 => Some(Instruction::LeftShift(false, false, RegisterTarget::A)),
-      0x28 => Some(Instruction::RightShift(false, false, RegisterTarget::B)),
-      0x29 => Some(Instruction::RightShift(false, false, RegisterTarget::C)),
-      0x2A => Some(Instruction::RightShift(false, false, RegisterTarget::D)),
-      0x2B => Some(Instruction::RightShift(false, false, RegisterTarget::E)),
-      0x2C => Some(Instruction::RightShift(false, false, RegisterTarget::H)),
-      0x2D => Some(Instruction::RightShift(false, false, RegisterTarget::L)),
-      0x2E => Some(Instruction::RightShiftMem(false, false, DoubleRegisterTarget::HL)),
-      0x2F => Some(Instruction::RightShift(false, false, RegisterTarget::A)),
+      0x20 => Some(Instruction::LeftShift(ShiftOp::Arithmetic, RegisterTarget::B)),
+      0x21 => Some(Instruction::LeftShift(ShiftOp::Arithmetic, RegisterTarget::C)),
+      0x22 => Some(Instruction::LeftShift(ShiftOp::Arithmetic, RegisterTarget::D)),
+      0x23 => Some(Instruction::LeftShift(ShiftOp::Arithmetic, RegisterTarget::E)),
+      0x24 => Some(Instruction::LeftShift(ShiftOp::Arithmetic, RegisterTarget::H)),
+      0x25 => Some(Instruction::LeftShift(ShiftOp::Arithmetic, RegisterTarget::L)),
+      0x26 => Some(Instruction::LeftShiftMem(ShiftOp::Arithmetic, DoubleRegisterTarget::HL)),
+      0x27 => Some(Instruction::LeftShift(ShiftOp::Arithmetic, RegisterTarget::A)),
+      0x28 => Some(Instruction::RightShift(ShiftOp::Arithmetic, RegisterTarget::B)),
+      0x29 => Some(Instruction::RightShift(ShiftOp::Arithmetic, RegisterTarget::C)),
+      0x2A => Some(Instruction::RightShift(ShiftOp::Arithmetic, RegisterTarget::D)),
+      0x2B => Some(Instruction::RightShift(ShiftOp::Arithmetic, RegisterTarget::E)),
+      0x2C => Some(Instruction::RightShift(ShiftOp::Arithmetic, RegisterTarget::H)),
+      0x2D => Some(Instruction::RightShift(ShiftOp::Arithmetic, RegisterTarget::L)),
+      0x2E => Some(Instruction::RightShiftMem(ShiftOp::Arithmetic, DoubleRegisterTarget::HL)),
+      0x2F => Some(Instruction::RightShift(ShiftOp::Arithmetic, RegisterTarget::A)),
+
+      0x30 => Some(Instruction::Swap(RegisterTarget::B)),
+      0x31 => Some(Instruction::Swap(RegisterTarget::C)),
+      0x32 => Some(Instruction::Swap(RegisterTarget::D)),
+      0x33 => Some(Instruction::Swap(RegisterTarget::E)),
+      0x34 => Some(Instruction::Swap(RegisterTarget::H)),
+      0x35 => Some(Instruction::Swap(RegisterTarget::L)),
+      0x36 => Some(Instruction::SwapMem(DoubleRegisterTarget::HL)),
+      0x37 => Some(Instruction::Swap(RegisterTarget::A)),
+      0x38 => Some(Instruction::RightShift(ShiftOp::Logical, RegisterTarget::B)),
+      0x39 => Some(Instruction::RightShift(ShiftOp::Logical, RegisterTarget::C)),
+      0x3A => Some(Instruction::RightShift(ShiftOp::Logical, RegisterTarget::D)),
+      0x3B => Some(Instruction::RightShift(ShiftOp::Logical, RegisterTarget::E)),
+      0x3C => Some(Instruction::RightShift(ShiftOp::Logical, RegisterTarget::H)),
+      0x3D => Some(Instruction::RightShift(ShiftOp::Logical, RegisterTarget::L)),
+      0x3E => Some(Instruction::RightShiftMem(ShiftOp::Logical, DoubleRegisterTarget::HL)),
+      0x3F => Some(Instruction::RightShift(ShiftOp::Logical, RegisterTarget::A)),
 
       0x40 => Some(Instruction::BitCopy(0, RegisterTarget::B)),
       0x41 => Some(Instruction::BitCopy(0, RegisterTarget::C)),

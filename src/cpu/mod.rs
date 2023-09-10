@@ -403,21 +403,18 @@ impl CPU {
             self.registers.flag_half_carry();
             return 2;
         }
-        Instruction::LeftShift(include_carry, perform_rotate , target) => {
+        Instruction::LeftShift(operation, target) => {
             let value: u8 = self.get_register_target(target);
             let carry_out: u8 = (value & (1 << 7)) >> 7;
             let mut new_value: u8 = value << 1; // rust naturally left truncates
-            match (include_carry, perform_rotate) {
-                (true, true) => {
-                    panic!("Shift opcode tried to rotate and add carry");
-                }
-                (true, false) => {
+            match operation {
+                ShiftOp::IncludeCarry => {
                     new_value += self.registers.get_carry();
                 }
-                (false, true) => {
+                ShiftOp::Rotate => {
                     new_value += carry_out;
                 }
-                (false, false) => {
+                _ => {
                     // value is already correct
                 }
             }
@@ -428,21 +425,18 @@ impl CPU {
             self.registers.clear_half_carry();
             return 1;
         }
-        Instruction::LeftShiftMem(include_carry, perform_rotate , target) => {
+        Instruction::LeftShiftMem(operation, target) => {
             let value: u8 = self.get_memory_target(target);
             let carry_out: u8 = (value & (1 << 7)) >> 7;
             let mut new_value: u8 = value << 1; // rust naturally left truncates
-            match (include_carry, perform_rotate) {
-                (true, true) => {
-                    panic!("Shift opcode tried to rotate and add carry");
-                }
-                (true, false) => {
+            match operation {
+                ShiftOp::IncludeCarry => {
                     new_value += self.registers.get_carry();
                 }
-                (false, true) => {
+                ShiftOp::Rotate => {
                     new_value += carry_out;
                 }
-                (false, false) => {
+                _ => {
                     // value is already correct
                 }
             }
@@ -453,21 +447,21 @@ impl CPU {
             self.registers.clear_half_carry();
             return 3;
         }
-        Instruction::RightShift(include_carry, perform_rotate , target) => {
+        Instruction::RightShift(operation, target) => {
             let value: u8 = self.get_register_target(target);
             let carry_out: u8 = value & 1;
             let mut new_value: u8 = value >> 1; // rust naturally left truncates
-            match (include_carry, perform_rotate) {
-                (true, true) => {
-                    panic!("Shift opcode tried to rotate and add carry");
+            match operation {
+                ShiftOp::Arithmetic => {
+                    new_value += (new_value & (1 << 6)) << 1;
                 }
-                (true, false) => {
+                ShiftOp::IncludeCarry => {
                     new_value += self.registers.get_carry() << 7;
                 }
-                (false, true) => {
+                ShiftOp::Rotate => {
                     new_value += carry_out << 7;
                 }
-                (false, false) => {
+                ShiftOp::Logical => {
                     // value is already correct
                 }
             }
@@ -478,21 +472,21 @@ impl CPU {
             self.registers.clear_half_carry();
             return 1;
         }
-        Instruction::RightShiftMem(include_carry, perform_rotate , target) => {
+        Instruction::RightShiftMem(operation, target) => {
             let value: u8 = self.get_memory_target(target);
             let carry_out: u8 = value & 1;
             let mut new_value: u8 = value >> 1; // rust naturally left truncates
-            match (include_carry, perform_rotate) {
-                (true, true) => {
-                    panic!("Shift opcode tried to rotate and add carry");
+            match operation {
+                ShiftOp::Arithmetic => {
+                    new_value += (new_value & (1 << 6)) << 1;
                 }
-                (true, false) => {
+                ShiftOp::IncludeCarry => {
                     new_value += self.registers.get_carry() << 7;
                 }
-                (false, true) => {
+                ShiftOp::Rotate => {
                     new_value += carry_out << 7;
                 }
-                (false, false) => {
+                ShiftOp::Logical => {
                     // value is already correct
                 }
             }
@@ -501,6 +495,26 @@ impl CPU {
             if new_value == 0 {self.registers.flag_zero();} else {self.registers.clear_zero();}
             self.registers.clear_subtract();
             self.registers.clear_half_carry();
+            return 3;
+        }
+        Instruction::Swap(target) => {
+            let value: u8 = self.get_register_target(target);
+            let lsb: u8 = value & 0x0F;
+            let msb: u8 = value & 0xF0;
+            self.set_register_target(target, (lsb << 4) | msb);
+            self.registers.clear_subtract();
+            self.registers.clear_half_carry();
+            self.registers.clear_carry();
+            return 1;
+        }
+        Instruction::SwapMem(target) => {
+            let value: u8 = self.get_memory_target(target);
+            let lsb: u8 = value & 0x0F;
+            let msb: u8 = value & 0xF0;
+            self.set_memory_target(target, (lsb << 4) | msb);
+            self.registers.clear_subtract();
+            self.registers.clear_half_carry();
+            self.registers.clear_carry();
             return 3;
         }
       }
