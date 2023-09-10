@@ -403,6 +403,106 @@ impl CPU {
             self.registers.flag_half_carry();
             return 2;
         }
+        Instruction::LeftShift(include_carry, perform_rotate , target) => {
+            let value: u8 = self.get_register_target(target);
+            let carry_out: u8 = (value & (1 << 7)) >> 7;
+            let mut new_value: u8 = value << 1; // rust naturally left truncates
+            match (include_carry, perform_rotate) {
+                (true, true) => {
+                    panic!("Shift opcode tried to rotate and add carry");
+                }
+                (true, false) => {
+                    new_value += self.registers.get_carry();
+                }
+                (false, true) => {
+                    new_value += carry_out;
+                }
+                (false, false) => {
+                    // value is already correct
+                }
+            }
+            self.set_register_target(target, new_value);
+            if carry_out == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
+            if new_value == 0 {self.registers.flag_zero();} else {self.registers.clear_zero();}
+            self.registers.clear_subtract();
+            self.registers.clear_half_carry();
+            return 1;
+        }
+        Instruction::LeftShiftMem(include_carry, perform_rotate , target) => {
+            let value: u8 = self.get_memory_target(target);
+            let carry_out: u8 = (value & (1 << 7)) >> 7;
+            let mut new_value: u8 = value << 1; // rust naturally left truncates
+            match (include_carry, perform_rotate) {
+                (true, true) => {
+                    panic!("Shift opcode tried to rotate and add carry");
+                }
+                (true, false) => {
+                    new_value += self.registers.get_carry();
+                }
+                (false, true) => {
+                    new_value += carry_out;
+                }
+                (false, false) => {
+                    // value is already correct
+                }
+            }
+            self.set_memory_target(target, new_value);
+            if carry_out == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
+            if new_value == 0 {self.registers.flag_zero();} else {self.registers.clear_zero();}
+            self.registers.clear_subtract();
+            self.registers.clear_half_carry();
+            return 3;
+        }
+        Instruction::RightShift(include_carry, perform_rotate , target) => {
+            let value: u8 = self.get_register_target(target);
+            let carry_out: u8 = value & 1;
+            let mut new_value: u8 = value >> 1; // rust naturally left truncates
+            match (include_carry, perform_rotate) {
+                (true, true) => {
+                    panic!("Shift opcode tried to rotate and add carry");
+                }
+                (true, false) => {
+                    new_value += self.registers.get_carry() << 7;
+                }
+                (false, true) => {
+                    new_value += carry_out << 7;
+                }
+                (false, false) => {
+                    // value is already correct
+                }
+            }
+            self.set_register_target(target, new_value);
+            if carry_out == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
+            if new_value == 0 {self.registers.flag_zero();} else {self.registers.clear_zero();}
+            self.registers.clear_subtract();
+            self.registers.clear_half_carry();
+            return 1;
+        }
+        Instruction::RightShiftMem(include_carry, perform_rotate , target) => {
+            let value: u8 = self.get_memory_target(target);
+            let carry_out: u8 = value & 1;
+            let mut new_value: u8 = value >> 1; // rust naturally left truncates
+            match (include_carry, perform_rotate) {
+                (true, true) => {
+                    panic!("Shift opcode tried to rotate and add carry");
+                }
+                (true, false) => {
+                    new_value += self.registers.get_carry() << 7;
+                }
+                (false, true) => {
+                    new_value += carry_out << 7;
+                }
+                (false, false) => {
+                    // value is already correct
+                }
+            }
+            self.set_memory_target(target, new_value);
+            if carry_out == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
+            if new_value == 0 {self.registers.flag_zero();} else {self.registers.clear_zero();}
+            self.registers.clear_subtract();
+            self.registers.clear_half_carry();
+            return 3;
+        }
       }
     }
 
