@@ -1,3 +1,4 @@
+#[derive(Clone, Copy, Debug)]
 pub enum Instruction {
   // non-prefixed instructions
   NOP(), // does nothing
@@ -74,15 +75,17 @@ pub enum Instruction {
   SwapMem(DoubleRegisterTarget), // swaps first 4 bits for last 4 bits in the 
 }
 
+#[derive(Clone, Copy, Debug)]
 pub enum PostOp {
   Nop, Increment, Decrement,
 }
 
+#[derive(Clone, Copy, Debug)]
 pub enum ShiftOp {
   Rotate, IncludeCarry, Arithmetic, Logical
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum Conditional {
   ZeroFlag,
   NotZeroFlag,
@@ -91,16 +94,17 @@ pub enum Conditional {
   Unconditional,
 }
 
+#[derive(Clone, Copy, Debug)]
 pub enum InvariantFunction {
   F00, F08, F10, F18, F20, F28, F30, F38,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum RegisterTarget {
   A, B, C, D, E, H, L,
 }
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub enum DoubleRegisterTarget {
   AF, BC, DE, HL,
 }

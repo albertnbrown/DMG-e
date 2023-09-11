@@ -14,6 +14,10 @@ pub struct Registers {
 }
 
 impl Registers {
+    pub fn initialize() -> Registers {
+        return Registers { a: 0, b: 0, c:0, d: 0, e: 0, h: 0, l: 0, f: FlagsRegister { zero: false, subtract: false, half_carry: false, carry: false }};
+    }
+
     pub fn get_bc(&self) -> u16 {
         (self.b as u16) << 8
         | self.c as u16

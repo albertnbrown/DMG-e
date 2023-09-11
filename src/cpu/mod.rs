@@ -6,16 +6,23 @@ use registers::Registers;
 use memory::Memory;
 use instruction::*;
 
-struct CPU {
+pub struct CPU {
     registers: Registers,
     pc: u16,
     sp: u16,
-    memory: Memory,
+    pub memory: Memory,
+    nop_count: usize,
 }
 
 impl CPU {
+    pub fn initialize(file_name: String) -> CPU {
+        return CPU {
+            registers: Registers::initialize(), pc: 0x0100, sp: 0xFFFE, memory: Memory::initialize(file_name), nop_count: 0 
+        }
+    }
+
     // returns the number of machine cycles taken by the step
-    fn step(&mut self) -> usize {
+    pub fn step(&mut self) -> usize {
         //fetch
         let mut mem_cycles: usize = 0;
         let mut instruction_byte: u8 = self.memory.read_byte(self.pc);
@@ -29,6 +36,14 @@ impl CPU {
     
         // decode
         if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed) {
+            println!("{:?} pc: {:x}", instruction, self.pc);
+            match instruction {
+                Instruction::NOP() => {
+                    self.nop_count += 1;
+                    if self.nop_count > 100 {panic!("nop nop");}
+                }
+                _ => {}
+            }
             mem_cycles += self.execute(instruction);
         } else {
           let description = format!("0x{}{:x}", if prefixed { "cb" } else { "" }, instruction_byte);
