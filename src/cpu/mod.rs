@@ -278,7 +278,7 @@ impl CPU {
             let do_jump: bool = self.check_conditional(condition);
             if do_jump {
                 // parens make sure that PC only overflows if the instruction is bad
-                self.pc = ((self.pc as i32) + ((n as i32) + (i8::MIN as i32))) as u16;
+                self.pc = ((self.pc as i32) + (n as i8) as i32) as u16;
                 cycles += 1;
             }
             return cycles;
@@ -396,7 +396,7 @@ impl CPU {
         Instruction::LoadRRSPn(destination) => {
             let n: u8 = self.get_n();
             // parens make sure that you never get overflow or underflow unless instruction is bad
-            let data: u16 = ((self.sp as i32) + ((i8::MIN as i32) + (n as i32))) as u16;
+            let data: u16 = ((self.sp as i32) + (n as i8) as i32) as u16;
             self.set_double_register_target(destination, data);
             self.registers.clear_zero();
             self.registers.clear_subtract();
@@ -405,7 +405,7 @@ impl CPU {
         Instruction::ADDSPn() => {
             let n: u8 = self.get_n();
             // parens make sure that you never get overflow or underflow unless instruction is bad
-            let new_value: u16 = ((self.sp as i32) + ((i8::MIN as i32) + (n as i32))) as u16;
+            let new_value: u16 = ((self.sp as i32) + (n as i8) as i32) as u16;
             self.sp = new_value;
             self.registers.clear_zero();
             self.registers.clear_subtract();
@@ -855,10 +855,12 @@ impl CPU {
             PostOp::Nop => {
             }
             PostOp::Increment => {
-                self.set_memory_target(target, data + 1);
+                let (new_val, _) = data.overflowing_add(1);
+                self.set_memory_target(target, new_val);
             }
             PostOp::Decrement => {
-                self.set_memory_target(target, data - 1);
+                let (new_val, _) = data.overflowing_sub(1);
+                self.set_memory_target(target, new_val);
             }
         }
     }
