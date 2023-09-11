@@ -331,7 +331,11 @@ impl Instruction {
       0xC5 => Some(Instruction::PushRR(DoubleRegisterTarget::BC)),
       0xC6 => Some(Instruction::ADDn(false)),
       0xC7 => Some(Instruction::CallI(InvariantFunction::F00)),
-      0xC8 => Some(Instruction::JumpNN(Conditional::ZeroFlag)),
+      0xC8 => Some(Instruction::Return(Conditional::ZeroFlag)),
+      0xC9 => Some(Instruction::Return(Conditional::Unconditional)),
+      0xCA => Some(Instruction::JumpNN(Conditional::ZeroFlag)),
+      0xCC => Some(Instruction::CallNN(Conditional::ZeroFlag)),
+      0xCD => Some(Instruction::CallNN(Conditional::Unconditional)),
       0xCE => Some(Instruction::ADDn(true)),
       0xCF => Some(Instruction::CallI(InvariantFunction::F08)),
       
@@ -342,7 +346,9 @@ impl Instruction {
       0xD5 => Some(Instruction::PushRR(DoubleRegisterTarget::DE)),
       0xD6 => Some(Instruction::SUBn(false)),
       0xD7 => Some(Instruction::CallI(InvariantFunction::F10)),
-      0xD8 => Some(Instruction::JumpNN(Conditional::CarryFlag)),
+      0xD8 => Some(Instruction::Return(Conditional::CarryFlag)),
+      0xDA => Some(Instruction::JumpNN(Conditional::CarryFlag)),
+      0xDC => Some(Instruction::CallNN(Conditional::CarryFlag)),
       0xDE => Some(Instruction::SUBn(true)),
       0xDF => Some(Instruction::CallI(InvariantFunction::F18)),
       
