@@ -12,12 +12,13 @@ pub struct CPU {
     sp: u16,
     pub memory: Memory,
     nop_count: usize,
+    instruction_history: [(Instruction,u16,usize); 1000],
 }
 
 impl CPU {
     pub fn initialize(file_name: String) -> CPU {
         return CPU {
-            registers: Registers::initialize(), pc: 0x0100, sp: 0xFFFE, memory: Memory::initialize(file_name), nop_count: 0 
+            registers: Registers::initialize(), pc: 0x0100, sp: 0xFFFE, memory: Memory::initialize(file_name), nop_count: 0, instruction_history: [(Instruction::NOP(),0,0); 1000],
         }
     }
 
@@ -36,19 +37,28 @@ impl CPU {
     
         // decode
         if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed) {
-            println!("{:?} pc: {:x}", instruction, self.pc);
+            // println!("{:?} pc: {:x}", instruction, self.pc);
             match instruction {
                 Instruction::NOP() => {
                     self.nop_count += 1;
-                    if self.nop_count > 100 {panic!("nop nop");}
                 }
-                _ => {}
+                _ => {
+                    self.instruction_history.rotate_right(1);
+                    self.instruction_history[999] = (instruction, self.pc, self.nop_count);
+                    self.nop_count = 0;
+                }
             }
             mem_cycles += self.execute(instruction);
         } else {
-          let description = format!("0x{}{:x}", if prefixed { "cb" } else { "" }, instruction_byte);
-          panic!("Unkown instruction found for: {}", description)
+            println!("{:?}", self.instruction_history);
+            let description = format!("0x{}{:x}", if prefixed { "cb" } else { "" }, instruction_byte);
+            panic!("Unkown instruction found for: {}", description)
         };
+
+        if self.pc >= 0xFFFD {
+            println!("{:?}", self.instruction_history);
+            panic!("pc too high");
+        }
 
         return mem_cycles;
     }
