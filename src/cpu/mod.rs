@@ -81,7 +81,7 @@ impl CPU {
                         inst: instruction,
                         pc: self.pc,
                         nops: self.nop_count,
-                        spi: 0x10000 - self.sp as u32,
+                        spi: (0x10000 - self.sp as u32)/2 - 1,
                     };
                     self.nop_count = 0;
                 }
@@ -94,8 +94,13 @@ impl CPU {
         };
 
         if self.pc >= 0xFFFD {
-            println!("{:?}", self.instruction_history);
+            println!("{}", self);
             panic!("pc too high");
+        }
+
+        if self.sp == 0x0 {
+            println!("{}", self);
+            panic!("sp too high");
         }
 
         return mem_cycles;
