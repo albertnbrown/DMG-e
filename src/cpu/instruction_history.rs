@@ -12,7 +12,7 @@ pub struct InstructionHistory {
 impl fmt::Display for InstructionHistory {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        fmt::Display::fmt(&*self, f)
+        write!(f, "inst {:?}, pc: {}, spi: {}, nops: {}", self.inst, self.pc, self.spi, self.nops)
     }
 }
 

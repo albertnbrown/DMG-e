@@ -9,7 +9,9 @@ use instruction::*;
 use instruction_history::InstructionHistory;
 use std::fmt;
 
-const DEBUG_INSTRUCTIONS_PER_LINE: usize = 4;
+const DEBUG_INSTRUCTIONS_PER_LINE: usize = 3;
+const HISTORY_SIZE: usize = 99; // make divisible by DEBUG_INSTRUCTIONS_PER_LINE for good printing
+const PADDING_WIDTH: usize = 63;
 
 pub struct CPU {
     registers: Registers,
@@ -17,17 +19,20 @@ pub struct CPU {
     sp: u16,
     pub memory: Memory,
     nop_count: usize,
-    instruction_history: [InstructionHistory; 1000],
+    instruction_history: [InstructionHistory; HISTORY_SIZE],
 }
 
 impl fmt::Display for CPU {
     #[inline]
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        for instruction_history in self.instruction_history.iter() {
-            for i in 0..DEBUG_INSTRUCTIONS_PER_LINE {
-                write!(f, "{} - {}", 0, instruction_history);
+        for (i, chunk) in self.instruction_history.chunks(DEBUG_INSTRUCTIONS_PER_LINE).rev().enumerate() {
+            let mut write = "".to_owned();
+            for (j, history_e) in chunk.iter().rev().enumerate() {
+                write.push_str(&format!("{} - {} ", HISTORY_SIZE - i*DEBUG_INSTRUCTIONS_PER_LINE - j, history_e));
+                let padding_len: usize = ((j+1)*PADDING_WIDTH).checked_sub(write.chars().count()).unwrap_or(0);
+                write.push_str(&" ".repeat(padding_len))
             }
-            write!(f, "\n");
+            writeln!(f, "{}", &write)?;
         }
         write!(f,"Done")
     }
@@ -41,7 +46,7 @@ impl CPU {
             sp: 0xFFFE,
             memory: Memory::initialize(file_name),
             nop_count: 0,
-            instruction_history: [InstructionHistory::new(); 1000],
+            instruction_history: [InstructionHistory::new(); HISTORY_SIZE],
         }
     }
 
@@ -66,11 +71,11 @@ impl CPU {
                     self.nop_count += 1;
                 }
                 Instruction::JumpRn(_) | Instruction::JumpNN(_) => {
-                    println!("I jumped: {:?}", self.instruction_history[self.instruction_history.len()-1]);
+                    println!("I jumped: {}", self.instruction_history[HISTORY_SIZE-1]);
                 }
                 _ => {
                     self.instruction_history.rotate_right(1);
-                    self.instruction_history[self.instruction_history.len()-1] = InstructionHistory {
+                    self.instruction_history[HISTORY_SIZE-1] = InstructionHistory {
                         inst: instruction,
                         pc: self.pc,
                         nops: self.nop_count,

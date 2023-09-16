@@ -1,3 +1,5 @@
+use std::fmt;
+
 #[derive(Clone, Copy, Debug)]
 pub enum Instruction {
   // non-prefixed instructions
@@ -108,6 +110,13 @@ pub enum RegisterTarget {
 pub enum DoubleRegisterTarget {
   AF, BC, DE, HL,
 }
+
+// impl fmt::Display for Instruction {
+//   #[inline]
+//   fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+//       write!(f, "{}", self)
+//   }
+// }
 
 impl Instruction {
   pub fn from_byte(byte: u8, prefixed: bool) -> Option<Instruction> {
