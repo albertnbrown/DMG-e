@@ -15,7 +15,7 @@ const PADDING_WIDTH: usize = 63;
 
 pub struct CPU {
     registers: Registers,
-    pc: u16,
+    pub pc: u16,
     sp: u16,
     pub memory: Memory,
     nop_count: usize,
@@ -53,6 +53,10 @@ impl CPU {
             nop_count: 0,
             instruction_history: [InstructionHistory::new(); HISTORY_SIZE],
         }
+    }
+
+    pub fn print_self(&self) {
+        println!("{}", self);
     }
 
     // returns the number of machine cycles taken by the step
@@ -446,11 +450,13 @@ impl CPU {
         }
         Instruction::LoadSPNN() => {
             let data = self.get_nn();
-            self.sp = data;
+            // sp is little endian as well
+            self.sp = ((data & 0x00FF) << 8) | (data & 0xFF00);
             return 3;
         }
         Instruction::LoadSPRR(source) => {
-            self.sp = self.get_double_register_target(source);
+            let data = self.get_double_register_target(source);
+            self.sp = ((data & 0x00FF) << 8) | (data & 0xFF00);
             return 2;
         }
         Instruction::LoadRRSPn(destination) => {

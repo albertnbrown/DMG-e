@@ -1,5 +1,3 @@
-use std::fmt;
-
 #[derive(Clone, Copy, Debug)]
 pub enum Instruction {
   // non-prefixed instructions
