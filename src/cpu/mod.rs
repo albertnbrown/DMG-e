@@ -28,7 +28,12 @@ impl fmt::Display for CPU {
         for (i, chunk) in self.instruction_history.chunks(DEBUG_INSTRUCTIONS_PER_LINE).rev().enumerate() {
             let mut write = "".to_owned();
             for (j, history_e) in chunk.iter().rev().enumerate() {
-                write.push_str(&format!("{} - {} ", HISTORY_SIZE - i*DEBUG_INSTRUCTIONS_PER_LINE - j, history_e));
+                write.push_str(
+                    &format!("{0:<2$} - {1} ",
+                    HISTORY_SIZE - i*DEBUG_INSTRUCTIONS_PER_LINE - j,
+                    history_e,
+                    (HISTORY_SIZE as f64).log10().floor() as usize + 1),
+                );
                 let padding_len: usize = ((j+1)*PADDING_WIDTH).checked_sub(write.chars().count()).unwrap_or(0);
                 write.push_str(&" ".repeat(padding_len))
             }
@@ -69,9 +74,6 @@ impl CPU {
             match instruction {
                 Instruction::NOP() => {
                     self.nop_count += 1;
-                }
-                Instruction::JumpRn(_) | Instruction::JumpNN(_) => {
-                    println!("I jumped: {}", self.instruction_history[HISTORY_SIZE-1]);
                 }
                 _ => {
                     self.instruction_history.rotate_right(1);
