@@ -106,6 +106,10 @@ impl CPU {
             panic!("sp too high");
         }
 
+        // if self.pc == 0xC000 {
+        //     self.memory.print_range(self.pc as usize, 50);
+        // }
+
         return mem_cycles;
     }
 
@@ -638,6 +642,9 @@ impl CPU {
             self.registers.clear_carry();
             return 3;
         }
+        Instruction::DI() => {
+            return 1;
+        }
       }
     }
 
@@ -906,17 +913,17 @@ impl CPU {
     // applies the post op to the byte in memory at the location specified by the double register enum
     fn do_post_op(&mut self, target: DoubleRegisterTarget, post_op: PostOp) {
         // we don't use add and sub here because we're not setting flags
-        let data = self.get_memory_target(target);
+        let data = self.get_double_register_target(target);
         match post_op {
             PostOp::Nop => {
             }
             PostOp::Increment => {
                 let (new_val, _) = data.overflowing_add(1);
-                self.set_memory_target(target, new_val);
+                self.set_double_register_target(target, new_val);
             }
             PostOp::Decrement => {
                 let (new_val, _) = data.overflowing_sub(1);
-                self.set_memory_target(target, new_val);
+                self.set_double_register_target(target, new_val);
             }
         }
     }

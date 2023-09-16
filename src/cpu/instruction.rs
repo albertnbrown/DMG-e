@@ -62,6 +62,8 @@ pub enum Instruction {
   PushRR(DoubleRegisterTarget), // push the double register value to the stack
   PopRR(DoubleRegisterTarget), // pop from the stack to the double register
 
+  DI(), // disable interrupts
+
   // prefixed instructions
   Reset(u8, RegisterTarget), // set the bit indexed by the first parameter on the register target to zero
   ResetMem(u8, DoubleRegisterTarget), // set the bit indexed by the first parameter on the byte in memory indexed by the double register to zero
@@ -376,6 +378,7 @@ impl Instruction {
       0xF0 => Some(Instruction::LoadRHighN(RegisterTarget::A)),
       0xF1 => Some(Instruction::PopRR(DoubleRegisterTarget::AF)),
       0xF2 => Some(Instruction::LoadRHighR(RegisterTarget::A, RegisterTarget::C)),
+      0xF3 => Some(Instruction::DI()),
       0xF5 => Some(Instruction::PushRR(DoubleRegisterTarget::AF)),
       0xF6 => Some(Instruction::ORn()),
       0xF7 => Some(Instruction::CallI(InvariantFunction::F30)),

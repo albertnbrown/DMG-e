@@ -28,6 +28,12 @@ impl Memory {
         return Memory { memory };
     }
 
+    pub fn print_range(&mut self, start: usize, len: usize) {
+        let slice = &mut self.memory[start..start+len];
+        slice.iter_mut().for_each(|byte|  print!("{:x} ", byte));
+        println!();
+    }
+
     pub fn read_byte(&self, address: u16) -> u8 {
         self.memory[address as usize]
     }
