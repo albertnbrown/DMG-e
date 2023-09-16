@@ -18,7 +18,7 @@ fn main() {
     let mut step_counter: usize = 0;
 
     loop {
-        step_counter += cpu.step();
+        step_counter += cpu.step(step_counter);
         if cpu.memory.read_byte(0xFF02) == 0x81 {
             print!("{}", std::str::from_utf8(&[cpu.memory.read_byte(0xFF01)]).unwrap());
         }

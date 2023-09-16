@@ -39,7 +39,7 @@ impl fmt::Display for CPU {
             }
             writeln!(f, "{}", &write)?;
         }
-        write!(f,"Done")
+        write!(f,"^^ Instruction History Tail ^^")
     }
 }
 
@@ -56,7 +56,7 @@ impl CPU {
     }
 
     // returns the number of machine cycles taken by the step
-    pub fn step(&mut self) -> usize {
+    pub fn step(&mut self, step_count: usize) -> usize {
         //fetch
         let mut mem_cycles: usize = 0;
         let mut instruction_byte: u8 = self.memory.read_byte(self.pc);
@@ -89,17 +89,20 @@ impl CPU {
             mem_cycles += self.execute(instruction);
         } else {
             println!("{}", self);
+            println!("failed on step: {}", step_count);
             let description = format!("0x{}{:x}", if prefixed { "cb" } else { "" }, instruction_byte);
             panic!("Unkown instruction found for: {}", description)
         };
 
         if self.pc >= 0xFFFD {
             println!("{}", self);
+            println!("failed on step: {}", step_count);
             panic!("pc too high");
         }
 
         if self.sp == 0x0 {
             println!("{}", self);
+            println!("failed on step: {}", step_count);
             panic!("sp too high");
         }
 
