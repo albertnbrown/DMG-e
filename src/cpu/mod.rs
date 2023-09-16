@@ -1,10 +1,15 @@
 mod registers;
 mod memory;
 mod instruction;
+mod instruction_history;
 
 use registers::Registers;
 use memory::Memory;
 use instruction::*;
+use instruction_history::InstructionHistory;
+use std::fmt;
+
+const DEBUG_INSTRUCTIONS_PER_LINE: usize = 4;
 
 pub struct CPU {
     registers: Registers,
@@ -12,13 +17,31 @@ pub struct CPU {
     sp: u16,
     pub memory: Memory,
     nop_count: usize,
-    instruction_history: [(Instruction,u16,usize); 1000],
+    instruction_history: [InstructionHistory; 1000],
+}
+
+impl fmt::Display for CPU {
+    #[inline]
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        for instruction_history in self.instruction_history.iter() {
+            for i in 0..DEBUG_INSTRUCTIONS_PER_LINE {
+                write!(f, "{} - {}", 0, instruction_history);
+            }
+            write!(f, "\n");
+        }
+        write!(f,"Done")
+    }
 }
 
 impl CPU {
     pub fn initialize(file_name: String) -> CPU {
         return CPU {
-            registers: Registers::initialize(), pc: 0x0100, sp: 0xFFFE, memory: Memory::initialize(file_name), nop_count: 0, instruction_history: [(Instruction::NOP(),0,0); 1000],
+            registers: Registers::initialize(),
+            pc: 0x0100,
+            sp: 0xFFFE,
+            memory: Memory::initialize(file_name),
+            nop_count: 0,
+            instruction_history: [InstructionHistory::new(); 1000],
         }
     }
 
@@ -42,15 +65,23 @@ impl CPU {
                 Instruction::NOP() => {
                     self.nop_count += 1;
                 }
+                Instruction::JumpRn(_) | Instruction::JumpNN(_) => {
+                    println!("I jumped: {:?}", self.instruction_history[self.instruction_history.len()-1]);
+                }
                 _ => {
                     self.instruction_history.rotate_right(1);
-                    self.instruction_history[999] = (instruction, self.pc, self.nop_count);
+                    self.instruction_history[self.instruction_history.len()-1] = InstructionHistory {
+                        inst: instruction,
+                        pc: self.pc,
+                        nops: self.nop_count,
+                        spi: 0x10000 - self.sp as u32,
+                    };
                     self.nop_count = 0;
                 }
             }
             mem_cycles += self.execute(instruction);
         } else {
-            println!("{:?}", self.instruction_history);
+            println!("{}", self);
             let description = format!("0x{}{:x}", if prefixed { "cb" } else { "" }, instruction_byte);
             panic!("Unkown instruction found for: {}", description)
         };
