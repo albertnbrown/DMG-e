@@ -76,13 +76,13 @@ impl CPU {
                     self.nop_count += 1;
                 }
                 _ => {
-                    self.instruction_history.rotate_right(1);
                     self.instruction_history[HISTORY_SIZE-1] = InstructionHistory {
                         inst: instruction,
                         pc: self.pc,
                         nops: self.nop_count,
                         spi: (0x10000 - self.sp as u32)/2 - 1,
                     };
+                    self.instruction_history.rotate_right(1);
                     self.nop_count = 0;
                 }
             }
@@ -891,11 +891,11 @@ impl CPU {
 
     // pop from the stack
     fn pop(&mut self) -> u16 {
+        self.sp = self.sp.wrapping_add(1);
         let lsb = self.memory.read_byte(self.sp) as u16;
-        self.sp = self.sp.wrapping_add(1);
     
-        let msb = self.memory.read_byte(self.sp) as u16;
         self.sp = self.sp.wrapping_add(1);
+        let msb = self.memory.read_byte(self.sp) as u16;
     
         return (msb << 8) | lsb;
       }
