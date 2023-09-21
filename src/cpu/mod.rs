@@ -110,10 +110,6 @@ impl CPU {
             panic!("sp too high");
         }
 
-        // if self.pc == 0xC000 {
-        //     self.memory.print_range(self.pc as usize, 50);
-        // }
-
         return mem_cycles;
     }
 
@@ -907,11 +903,11 @@ impl CPU {
 
     // pop from the stack
     fn pop(&mut self) -> u16 {
-        self.sp = self.sp.wrapping_add(1);
         let lsb = self.memory.read_byte(self.sp) as u16;
-    
         self.sp = self.sp.wrapping_add(1);
+    
         let msb = self.memory.read_byte(self.sp) as u16;
+        self.sp = self.sp.wrapping_add(1);
     
         return (msb << 8) | lsb;
       }

@@ -16,14 +16,28 @@ fn main() {
 
     let mut step_counter: usize = 0;
 
+    let mut flag: bool = false;
+
     loop {
         step_counter += cpu.step(step_counter);
         if cpu.memory.read_byte(0xFF02) == 0x81 {
             print!("{}", std::str::from_utf8(&[cpu.memory.read_byte(0xFF01)]).unwrap());
         }
         
-        if step_counter % 10100 == 0 && cpu.pc >= 0xC000 {
-            cpu.print_self();
-        }
+        // if cpu.pc >= 0xC000 {
+        //     flag = true;
+        // }
+
+        // if cpu.pc < 0xC000 && flag {
+        //     flag = false;
+        //     step_counter += cpu.step(step_counter);
+        //     cpu.print_self();
+        //     println!("{:x}", cpu.pc);
+        // }
+
+        // if step_counter % 10100 == 0 && cpu.pc >= 0xC000 {
+        //     cpu.print_self();
+        //     println!("{}", step_counter);
+        // }
     }
 }
