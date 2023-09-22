@@ -35,9 +35,14 @@ fn main() {
         //     println!("{:x}", cpu.pc);
         // }
 
-        // if step_counter % 10100 == 0 && cpu.pc >= 0xC000 {
-        //     cpu.print_self();
-        //     println!("{}", step_counter);
-        // }
+        if step_counter % 10100 == 0 && cpu.pc >= 0xC000 {
+            cpu.print_self();
+            println!("{}", step_counter);
+        }
+
+        if cpu.pc == 0xd801 {
+            cpu.memory.print_range(0xd801 - 50, 100);
+            cpu.memory.print_range(0x7777 - 10, 20);
+        }
     }
 }
