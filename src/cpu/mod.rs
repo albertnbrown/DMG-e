@@ -75,6 +75,8 @@ impl CPU {
         // decode
         if let Some(instruction) = Instruction::from_byte(instruction_byte, prefixed) {
             // println!("{:?} pc: {:x}", instruction, self.pc);
+            mem_cycles += self.execute(instruction);
+
             match instruction {
                 Instruction::NOP() => {
                     self.nop_count += 1;
@@ -90,7 +92,6 @@ impl CPU {
                     self.nop_count = 0;
                 }
             }
-            mem_cycles += self.execute(instruction);
         } else {
             println!("{}", self);
             println!("failed on step: {}", step_count);
