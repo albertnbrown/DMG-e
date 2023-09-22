@@ -35,10 +35,14 @@ impl Memory {
     }
 
     pub fn read_byte(&self, address: u16) -> u8 {
-        self.memory[address as usize]
+        return self.memory[address as usize]
     }
 
     pub fn write_byte(&mut self, address: u16, value: u8) {
         self.memory[address as usize] = value;
+        
+        if address >= 0xC000 && address <= 0xDDFF {
+            self.memory[address as usize + 0x2000] = value;
+        }
     }
 }
