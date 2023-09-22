@@ -44,5 +44,12 @@ impl Memory {
         if address >= 0xC000 && address <= 0xDDFF {
             self.memory[address as usize + 0x2000] = value;
         }
+        if address >= 0xE000 && address <= 0xFDFF {
+            self.memory[address as usize - 0x2000] = value;
+        }
+
+        // if address >= 0xd800 && address <= 0xd81F {
+        //     self.print_range(0xd800, 0x001F);
+        // }
     }
 }
