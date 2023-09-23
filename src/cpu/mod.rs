@@ -137,17 +137,21 @@ impl CPU {
             return 2;
         }
         Instruction::ADD16(source) => {
+            let zero = self.registers.get_zero();
             let value: u16 = self.get_double_register_target(source);
             self.registers.l = self.add(self.registers.l, (value & 0x00FF) as u8);
             let carry: u8 = self.registers.get_carry();
             self.registers.h = self.add(self.registers.h, ((value & 0xFF00) >> 8) as u8 + carry);
+            if zero == 1 {self.registers.flag_zero();} else {self.registers.clear_zero();}
             return 2;
         }
         Instruction::ADD16SP() => {
+            let zero = self.registers.get_zero();
             let value: u16 = self.sp;
             self.registers.l = self.add(self.registers.l, (value & 0x00FF) as u8);
             let carry: u8 = self.registers.get_carry();
             self.registers.h = self.add(self.registers.h, ((value & 0xFF00) >> 8) as u8 + carry);
+            if zero == 1 {self.registers.flag_zero();} else {self.registers.clear_zero();}
             return 2;
         }
         Instruction::SUB(target, include_carry) => {
