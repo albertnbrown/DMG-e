@@ -62,12 +62,12 @@ impl CPU {
     fn write_byte_debug(&mut self, address: u16, value: u8) {
         self.memory.write_byte(address, value);
 
-        if address >= 0xd800 && address <= 0xd81F {
-            println!("{:x}", value);
-            println!("{:x}", self.pc);
-            self.memory.print_range(0xd800, 0x0020);
-            self.print_self();
-        }
+        // if address >= 0xd800 && address <= 0xd81F {
+        //     println!("{:x}", value);
+        //     println!("{:x}", self.pc);
+        //     self.memory.print_range(0xd800, 0x0020);
+        //     self.print_self();
+        // }
     }
 
     // returns the number of machine cycles taken by the step
@@ -152,7 +152,7 @@ impl CPU {
             let value: u16 = self.get_double_register_target(source);
             self.registers.l = self.add(self.registers.l, (value & 0x00FF) as u8);
             let carry: u8 = self.registers.get_carry();
-            self.registers.h = self.add(self.registers.h, ((value & 0xFF00) >> 8) as u8 + carry);
+            self.registers.h = self.add(self.registers.h, ((value & 0xFF00) >> 8) as u8 carry);
             if zero == 1 {self.registers.flag_zero();} else {self.registers.clear_zero();}
             return 2;
         }

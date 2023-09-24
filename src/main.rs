@@ -21,7 +21,9 @@ fn main() {
     loop {
         step_counter += cpu.step(step_counter);
         if cpu.memory.read_byte(0xFF02) == 0x81 {
+            // print!("{:x} ", cpu.memory.read_byte(0xFF01));
             print!("{}", std::str::from_utf8(&[cpu.memory.read_byte(0xFF01)]).unwrap());
+            cpu.memory.write_byte(0xFF02, 0x00);
         }
         
         // if cpu.pc >= 0xC000 {
@@ -35,14 +37,14 @@ fn main() {
         //     println!("{:x}", cpu.pc);
         // }
 
-        if step_counter % 10100 == 0 && cpu.pc >= 0xC000 {
-            cpu.print_self();
-            println!("{}", step_counter);
-        }
+        // if step_counter % 10100 == 0 && cpu.pc >= 0xC000 {
+        //     cpu.print_self();
+        //     println!("{}", step_counter);
+        // }
 
-        if cpu.pc == 0xd801 {
-            cpu.memory.print_range(0xd801 - 50, 100);
-            cpu.memory.print_range(0x7777 - 10, 20);
-        }
+        // if cpu.pc == 0xd801 {
+        //     cpu.memory.print_range(0xd801 - 50, 100);
+        //     cpu.memory.print_range(0x7777 - 10, 20);
+        // }
     }
 }
