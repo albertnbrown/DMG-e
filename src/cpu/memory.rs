@@ -30,7 +30,7 @@ impl Memory {
 
     pub fn print_range(&mut self, start: usize, len: usize) {
         let slice = &mut self.memory[start..start+len];
-        slice.iter_mut().for_each(|byte|  print!("{:x} ", byte));
+        slice.iter_mut().for_each(|byte|  print!("{:>2x} ", byte));
         println!();
     }
 
@@ -47,9 +47,5 @@ impl Memory {
         if address >= 0xE000 && address <= 0xFDFF {
             self.memory[address as usize - 0x2000] = value;
         }
-
-        // if address >= 0xd800 && address <= 0xd81F {
-        //     self.print_range(0xd800, 0x001F);
-        // }
     }
 }

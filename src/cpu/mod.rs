@@ -10,7 +10,7 @@ use instruction_history::InstructionHistory;
 use std::fmt;
 
 const DEBUG_INSTRUCTIONS_PER_LINE: usize = 3;
-const HISTORY_SIZE: usize = 99; // make divisible by DEBUG_INSTRUCTIONS_PER_LINE for good printing
+const HISTORY_SIZE: usize = 18; // make divisible by DEBUG_INSTRUCTIONS_PER_LINE for good printing
 const PADDING_WIDTH: usize = 63;
 
 pub struct CPU {
@@ -57,6 +57,17 @@ impl CPU {
 
     pub fn print_self(&self) {
         println!("{}", self);
+    }
+
+    fn write_byte_debug(&mut self, address: u16, value: u8) {
+        self.memory.write_byte(address, value);
+
+        if address >= 0xd800 && address <= 0xd81F {
+            println!("{:x}", value);
+            println!("{:x}", self.pc);
+            self.memory.print_range(0xd800, 0x0020);
+            self.print_self();
+        }
     }
 
     // returns the number of machine cycles taken by the step
@@ -411,7 +422,7 @@ impl CPU {
         Instruction::LoadNNR(source) => {
             let nn: u16 = self.get_nn();
             let data: u8 = self.get_register_target(source);
-            self.memory.write_byte(nn, data);
+            self.write_byte_debug(nn, data);
             return 4;
         }
         Instruction::LoadRHighR(destination, offset) => {
@@ -423,7 +434,7 @@ impl CPU {
         Instruction::LoadHighRR(offset, source) => {
             let offset: u8 = self.get_register_target(offset);
             let data: u8 = self.get_register_target(source);
-            self.memory.write_byte(0xFF00_u16 + offset as u16, data);
+            self.write_byte_debug(0xFF00_u16 + offset as u16, data);
             return 2;
         }
         Instruction::LoadRHighN(destination) => {
@@ -435,7 +446,7 @@ impl CPU {
         Instruction::LoadHighNR(source) => {
             let offset: u8 = self.get_n();
             let data: u8 = self.get_register_target(source);
-            self.memory.write_byte(0xFF00_u16 + offset as u16, data);
+            self.write_byte_debug(0xFF00_u16 + offset as u16, data);
             return 3;
         }
         Instruction::LoadRRNN(destination) => {
@@ -445,8 +456,8 @@ impl CPU {
         }
         Instruction::LoadNNSP() => {
             let destination = self.get_nn();
-            self.memory.write_byte(destination, (self.sp & 0x00FF) as u8);
-            self.memory.write_byte(destination + 1, (self.sp & 0xFF00) as u8);
+            self.write_byte_debug(destination, (self.sp & 0x00FF) as u8);
+            self.write_byte_debug(destination + 1, (self.sp & 0xFF00) as u8);
             return 5;
         }
         Instruction::LoadSPNN() => {
@@ -765,16 +776,16 @@ impl CPU {
     fn set_memory_target(&mut self, target: DoubleRegisterTarget, value: u8) {
         match target {
             DoubleRegisterTarget::AF => {
-                self.memory.write_byte(self.registers.get_af(), value);
+                self.write_byte_debug(self.registers.get_af(), value);
             }
             DoubleRegisterTarget::BC => {
-                self.memory.write_byte(self.registers.get_bc(), value);
+                self.write_byte_debug(self.registers.get_bc(), value);
             }
             DoubleRegisterTarget::DE => {
-                self.memory.write_byte(self.registers.get_de(), value);
+                self.write_byte_debug(self.registers.get_de(), value);
             }
             DoubleRegisterTarget::HL => {
-                self.memory.write_byte(self.registers.get_hl(), value);
+                self.write_byte_debug(self.registers.get_hl(), value);
             }
         }
     }
@@ -900,10 +911,10 @@ impl CPU {
     // push to the stack
     fn push(&mut self, value: u16) {
         self.sp = self.sp.wrapping_sub(1);
-        self.memory.write_byte(self.sp, ((value & 0xFF00) >> 8) as u8);
+        self.write_byte_debug(self.sp, ((value & 0xFF00) >> 8) as u8);
     
         self.sp = self.sp.wrapping_sub(1);
-        self.memory.write_byte(self.sp, (value & 0xFF) as u8);
+        self.write_byte_debug(self.sp, (value & 0xFF) as u8);
     }
 
     // pop from the stack
