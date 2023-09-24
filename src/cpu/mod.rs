@@ -152,7 +152,12 @@ impl CPU {
             let value: u16 = self.get_double_register_target(source);
             self.registers.l = self.add(self.registers.l, (value & 0x00FF) as u8);
             let carry: u8 = self.registers.get_carry();
-            self.registers.h = self.add(self.registers.h, ((value & 0xFF00) >> 8) as u8 carry);
+            let (carried_value, cascaded_carry) = (((value & 0xFF00) >> 8) as u8).overflowing_add(carry);
+            self.registers.h = self.add(self.registers.h, carried_value);
+            if cascaded_carry {
+                self.registers.flag_carry();
+                self.registers.flag_half_carry();
+            }
             if zero == 1 {self.registers.flag_zero();} else {self.registers.clear_zero();}
             return 2;
         }
