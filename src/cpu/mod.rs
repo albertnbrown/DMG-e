@@ -116,11 +116,11 @@ impl CPU {
             panic!("pc too high");
         }
 
-        if self.sp == 0x0 {
-            println!("{}", self);
-            println!("failed on step: {}", step_count);
-            panic!("sp too high");
-        }
+        // if self.sp == 0x0 {
+        //     println!("{}", self);
+        //     println!("failed on step: {}", step_count);
+        //     panic!("sp too high");
+        // }
 
         return mem_cycles;
     }
@@ -130,89 +130,76 @@ impl CPU {
       match instruction {
         Instruction::NOP() => { return 1; }
         Instruction::ADD(target, include_carry) => {
-            let carry: u8 = if include_carry { self.registers.get_carry() } else { 0 };
-            let value: u8 = self.get_register_target(target) + carry;
-            self.registers.a = self.add(self.registers.a, value);
+            let value: u8 = self.get_register_target(target);
+            self.registers.a = self.add(self.registers.a, value, include_carry);
             return 1;
         }
         Instruction::ADDmem(target, include_carry) => {
-            let carry: u8 = if include_carry { self.registers.get_carry() } else { 0 };
-            let value: u8 = self.get_memory_target(target) + carry;
-            self.registers.a = self.add(self.registers.a, value);
+            let value: u8 = self.get_memory_target(target);
+            self.registers.a = self.add(self.registers.a, value, include_carry);
             return 2;
         }
         Instruction::ADDn(include_carry) => {
-            let carry: u8 = if include_carry { self.registers.get_carry() } else { 0 };
-            let value: u8 = self.get_n() + carry;
-            self.registers.a = self.add(self.registers.a, value);
+            let value: u8 = self.get_n();
+            self.registers.a = self.add(self.registers.a, value, include_carry);
             return 2;
         }
         Instruction::ADD16(source) => {
             let zero = self.registers.get_zero();
             let value: u16 = self.get_double_register_target(source);
-            self.registers.l = self.add(self.registers.l, (value & 0x00FF) as u8);
-            let carry: u8 = self.registers.get_carry();
-            let (carried_value, cascaded_carry) = (((value & 0xFF00) >> 8) as u8).overflowing_add(carry);
-            self.registers.h = self.add(self.registers.h, carried_value);
-            if cascaded_carry {
-                self.registers.flag_carry();
-                self.registers.flag_half_carry();
-            }
+            self.registers.l = self.add(self.registers.l, (value & 0x00FF) as u8, false);
+            self.registers.h = self.add(self.registers.h, ((value & 0xFF00) >> 8) as u8, true);
             if zero == 1 {self.registers.flag_zero();} else {self.registers.clear_zero();}
             return 2;
         }
         Instruction::ADD16SP() => {
             let zero = self.registers.get_zero();
             let value: u16 = self.sp;
-            self.registers.l = self.add(self.registers.l, (value & 0x00FF) as u8);
-            let carry: u8 = self.registers.get_carry();
-            self.registers.h = self.add(self.registers.h, ((value & 0xFF00) >> 8) as u8 + carry);
+            self.registers.l = self.add(self.registers.l, (value & 0x00FF) as u8, false);
+            self.registers.h = self.add(self.registers.h, ((value & 0xFF00) >> 8) as u8, true);
             if zero == 1 {self.registers.flag_zero();} else {self.registers.clear_zero();}
             return 2;
         }
         Instruction::SUB(target, include_carry) => {
-            let carry: u8 = if include_carry { self.registers.get_carry() } else { 0 };
-            let value: u8 = self.get_register_target(target) + carry;
-            self.registers.a = self.sub(self.registers.a, value);
+            let value: u8 = self.get_register_target(target);
+            self.registers.a = self.sub(self.registers.a, value, include_carry);
             return 1;
         }
         Instruction::SUBmem(target, include_carry) => {
-            let carry: u8 = if include_carry { self.registers.get_carry() } else { 0 };
-            let value: u8 = self.get_memory_target(target) + carry;
-            self.registers.a = self.sub(self.registers.a, value);
+            let value: u8 = self.get_memory_target(target);
+            self.registers.a = self.sub(self.registers.a, value, include_carry);
             return 2;
         }
         Instruction::SUBn(include_carry) => {
-            let carry: u8 = if include_carry { self.registers.get_carry() } else { 0 };
-            let value: u8 = self.get_n() + carry;
-            self.registers.a = self.sub(self.registers.a, value);
+            let value: u8 = self.get_n();
+            self.registers.a = self.sub(self.registers.a, value, include_carry);
             return 2;
         }
         Instruction::CP(target) => {
             let value: u8 = self.get_register_target(target);
-            let _ = self.sub(self.registers.a, value); // sub but just for the effect on the flags
+            let _ = self.sub(self.registers.a, value, false); // sub but just for the effect on the flags
             return 1;
         }
         Instruction::CPmem(target) => {
             let value: u8 = self.get_memory_target(target);
-            let _ = self.sub(self.registers.a, value); // sub but just for the effect on the flags
+            let _ = self.sub(self.registers.a, value, false); // sub but just for the effect on the flags
             return 2;
         }
         Instruction::CPn() => {
             let value: u8 = self.get_n();
-            let _ = self.sub(self.registers.a, value); // sub but just for the effect on the flags
+            let _ = self.sub(self.registers.a, value, false); // sub but just for the effect on the flags
             return 2;
         }
         Instruction::INC(target) => {
             let carry: u8 = self.registers.get_carry(); // need to preserve carry value as this op does not change it
-            let new_value: u8 = self.add(self.get_register_target(target), 1);
+            let new_value: u8 = self.add(self.get_register_target(target), 1, false);
             if carry == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
             self.set_register_target(target, new_value);
             return 1;
         }
         Instruction::INCmem(target) => {
             let carry: u8 = self.registers.get_carry(); // need to preserve carry value as this op does not change it
-            let new_value: u8 = self.add(self.get_memory_target(target), 1);
+            let new_value: u8 = self.add(self.get_memory_target(target), 1, false);
             if carry == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
             self.set_memory_target(target, new_value);
             return 3;
@@ -231,14 +218,14 @@ impl CPU {
         }
         Instruction::DEC(target) => {
             let carry: u8 = self.registers.get_carry(); // need to preserve carry value as this op does not change it
-            let new_value: u8 = self.sub(self.get_register_target(target), 1);
+            let new_value: u8 = self.sub(self.get_register_target(target), 1, false);
             if carry == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
             self.set_register_target(target, new_value);
             return 1;
         }
         Instruction::DECmem(target) => {
             let carry: u8 = self.registers.get_carry(); // need to preserve carry value as this op does not change it
-            let new_value: u8 = self.sub(self.get_memory_target(target), 1);
+            let new_value: u8 = self.sub(self.get_memory_target(target), 1, false);
             if carry == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
             self.set_memory_target(target, new_value);
             return 3;
@@ -813,24 +800,36 @@ impl CPU {
     }
 
     // adds and sets flags
-    fn add(&mut self, base: u8, value: u8) -> u8 {
-      let (new_value, did_overflow) = base.overflowing_add(value);
-      if new_value == 0 { self.registers.flag_zero(); } else { self.registers.clear_zero() }
-      self.registers.clear_subtract();
-      if did_overflow { self.registers.flag_carry(); } else { self.registers.clear_carry() }
-      if (base & 0xF) + (value & 0xF) > 0xF { self.registers.flag_half_carry(); } else { self.registers.clear_half_carry() }
-      return new_value;
+    fn add(&mut self, base: u8, value: u8, include_carry: bool) -> u8 {
+        let carry = if include_carry {self.registers.get_carry()} else {0};
+
+        let (mid_value, overflow_1) = base.overflowing_add(value);
+        let (new_value, overflow_2) = mid_value.overflowing_add(carry);
+        
+        if new_value == 0 { self.registers.flag_zero(); } else { self.registers.clear_zero() }
+        self.registers.clear_subtract();
+        if overflow_1 || overflow_2 { self.registers.flag_carry(); } else { self.registers.clear_carry() }
+        if (base & 0xF) + (value & 0xF) + carry > 0xF { self.registers.flag_half_carry(); } else { self.registers.clear_half_carry() }
+
+        return new_value;
     }
 
     // subtracts and sets flags
-    fn sub(&mut self, base: u8, value: u8) -> u8 {
-      let (new_value, did_overflow) = base.overflowing_sub(value);
-      if new_value == 0 { self.registers.flag_zero(); } else { self.registers.clear_zero() }
-      self.registers.flag_subtract();
-      if did_overflow { self.registers.flag_carry(); } else { self.registers.clear_carry() }
-      let (_, half_carry) = (base & 0xF).overflowing_sub(value & 0xF);
-      if  half_carry { self.registers.flag_half_carry(); } else { self.registers.clear_half_carry() }
-      return new_value;
+    fn sub(&mut self, base: u8, value: u8, include_carry: bool) -> u8 {
+        let carry = if include_carry {self.registers.get_carry()} else {0};
+
+        let (mid_value, overflow_1) = base.overflowing_sub(value);
+        let (new_value, overflow_2) = mid_value.overflowing_add(carry);
+
+        
+        if new_value == 0 { self.registers.flag_zero(); } else { self.registers.clear_zero() }
+        self.registers.flag_subtract();
+        let did_carry: bool = (overflow_1 && !overflow_2) || (!overflow_1 && overflow_2); // o_1 xor o_2
+        if did_carry { self.registers.flag_carry(); } else { self.registers.clear_carry() }
+        let (_, half_carry) = (base & 0xF + carry).overflowing_sub(value & 0xF);
+        if  half_carry { self.registers.flag_half_carry(); } else { self.registers.clear_half_carry() }
+        
+        return new_value;
     }
 
     // logical and
