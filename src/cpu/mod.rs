@@ -97,7 +97,7 @@ impl CPU {
                         inst: instruction,
                         pc: self.pc,
                         nops: self.nop_count,
-                        spi: (0x10000 - self.sp as u32)/2 - 1,
+                        spi: (0x10000 - self.sp as u32)/2,
                     };
                     self.instruction_history.rotate_right(1);
                     self.nop_count = 0;
@@ -449,18 +449,18 @@ impl CPU {
         Instruction::LoadNNSP() => {
             let destination = self.get_nn();
             self.write_byte_debug(destination, (self.sp & 0x00FF) as u8);
-            self.write_byte_debug(destination + 1, (self.sp & 0xFF00) as u8);
+            self.write_byte_debug(destination + 1, ((self.sp & 0xFF00) >> 8) as u8);
             return 5;
         }
         Instruction::LoadSPNN() => {
             let data = self.get_nn();
             // sp is little endian as well
-            self.sp = ((data & 0x00FF) << 8) | (data & 0xFF00);
+            self.sp = ((data & 0x00FF) << 8) | ((data & 0xFF00) >> 8);
             return 3;
         }
         Instruction::LoadSPRR(source) => {
             let data = self.get_double_register_target(source);
-            self.sp = ((data & 0x00FF) << 8) | (data & 0xFF00);
+            self.sp = ((data & 0x00FF) << 8) | ((data & 0xFF00) >> 8);
             return 2;
         }
         Instruction::LoadRRSPn(destination) => {

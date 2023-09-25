@@ -42,9 +42,14 @@ fn main() {
         //     println!("{}", step_counter);
         // }
 
-        // if cpu.pc == 0xd801 {
+        // if cpu.pc == 0xc62c || cpu.pc == 0xc631 {
         //     cpu.memory.print_range(0xd801 - 50, 100);
-        //     cpu.memory.print_range(0x7777 - 10, 20);
+        //     cpu.memory.print_range(0xcb23 - 10, 20);
+        //     cpu.memory.print_range(0xc62c - 10, 20);
+        //     cpu.memory.print_range(0xdd00, 4);
+        //     cpu.memory.print_range(0xc671 - 10, 20);
+        //     cpu.memory.print_range(0x0000, 40);
+        //     println!("^^ output ^^");
         // }
     }
 }
