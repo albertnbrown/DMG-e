@@ -84,7 +84,7 @@ pub enum PostOp {
 
 #[derive(Clone, Copy, Debug)]
 pub enum ShiftOp {
-  Rotate, IncludeCarry, Arithmetic, Logical
+  Rotate, RotateZ, IncludeCarry, IncludeCarryZ, Arithmetic, Logical
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -136,7 +136,7 @@ impl Instruction {
       0x04 => Some(Instruction::INC(RegisterTarget::B)),
       0x05 => Some(Instruction::DEC(RegisterTarget::B)),
       0x06 => Some(Instruction::LoadRN(RegisterTarget::B)),
-      0x07 => Some(Instruction::LeftShift(ShiftOp::Rotate, RegisterTarget::A)),
+      0x07 => Some(Instruction::LeftShift(ShiftOp::RotateZ, RegisterTarget::A)),
       0x08 => Some(Instruction::LoadNNSP()),
       0x09 => Some(Instruction::ADD16(DoubleRegisterTarget::BC)),
       0x0A => Some(Instruction::LoadRMem(RegisterTarget::A, DoubleRegisterTarget::BC, PostOp::Nop)),
@@ -144,7 +144,7 @@ impl Instruction {
       0x0C => Some(Instruction::INC(RegisterTarget::C)),
       0x0D => Some(Instruction::DEC(RegisterTarget::C)),
       0x0E => Some(Instruction::LoadRN(RegisterTarget::C)),
-      0x0F => Some(Instruction::RightShift(ShiftOp::Rotate, RegisterTarget::A)),
+      0x0F => Some(Instruction::RightShift(ShiftOp::RotateZ, RegisterTarget::A)),
       
       0x11 => Some(Instruction::LoadRRNN(DoubleRegisterTarget::DE)),
       0x12 => Some(Instruction::LoadMemR(DoubleRegisterTarget::DE, RegisterTarget::A, PostOp::Nop)),
@@ -152,7 +152,7 @@ impl Instruction {
       0x14 => Some(Instruction::INC(RegisterTarget::D)),
       0x15 => Some(Instruction::DEC(RegisterTarget::D)),
       0x16 => Some(Instruction::LoadRN(RegisterTarget::D)),
-      0x17 => Some(Instruction::LeftShift(ShiftOp::IncludeCarry, RegisterTarget::A)),
+      0x17 => Some(Instruction::LeftShift(ShiftOp::IncludeCarryZ, RegisterTarget::A)),
       0x18 => Some(Instruction::JumpRn(Conditional::Unconditional)),
       0x19 => Some(Instruction::ADD16(DoubleRegisterTarget::DE)),
       0x1A => Some(Instruction::LoadRMem(RegisterTarget::A, DoubleRegisterTarget::DE, PostOp::Nop)),
@@ -160,7 +160,7 @@ impl Instruction {
       0x1C => Some(Instruction::INC(RegisterTarget::E)),
       0x1D => Some(Instruction::DEC(RegisterTarget::E)),
       0x1E => Some(Instruction::LoadRN(RegisterTarget::E)),
-      0x1F => Some(Instruction::RightShift(ShiftOp::IncludeCarry, RegisterTarget::A)),
+      0x1F => Some(Instruction::RightShift(ShiftOp::IncludeCarryZ, RegisterTarget::A)),
       
       0x20 => Some(Instruction::JumpRn(Conditional::NotZeroFlag)),
       0x21 => Some(Instruction::LoadRRNN(DoubleRegisterTarget::HL)),

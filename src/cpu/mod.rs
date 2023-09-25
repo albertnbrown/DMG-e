@@ -542,20 +542,32 @@ impl CPU {
             let value: u8 = self.get_register_target(target);
             let carry_out: u8 = (value & (1 << 7)) >> 7;
             let mut new_value: u8 = value << 1; // rust naturally left truncates
+            let mut zero_override = false;
             match operation {
                 ShiftOp::IncludeCarry => {
                     new_value += self.registers.get_carry();
                 }
+                ShiftOp::IncludeCarryZ => {
+                    new_value += self.registers.get_carry();
+                    zero_override = true;
+                }
                 ShiftOp::Rotate => {
                     new_value += carry_out;
                 }
-                _ => {
+                ShiftOp::RotateZ => {
+                    new_value += carry_out;
+                    zero_override = true;
+                }
+                ShiftOp::Arithmetic => {
                     // value is already correct
+                }
+                _ => {
+                    panic!("LeftShift: unused enum pattern found {:?}", operation);
                 }
             }
             self.set_register_target(target, new_value);
             if carry_out == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
-            if new_value == 0 {self.registers.flag_zero();} else {self.registers.clear_zero();}
+            if new_value == 0 && !zero_override {self.registers.flag_zero();} else {self.registers.clear_zero();}
             self.registers.clear_subtract();
             self.registers.clear_half_carry();
             return 1;
@@ -571,8 +583,11 @@ impl CPU {
                 ShiftOp::Rotate => {
                     new_value += carry_out;
                 }
-                _ => {
+                ShiftOp::Arithmetic => {
                     // value is already correct
+                }
+                _ => {
+                    panic!("LeftShiftMem: unused enum pattern found {:?}", operation);
                 }
             }
             self.set_memory_target(target, new_value);
@@ -586,6 +601,7 @@ impl CPU {
             let value: u8 = self.get_register_target(target);
             let carry_out: u8 = value & 1;
             let mut new_value: u8 = value >> 1; // rust naturally left truncates
+            let mut zero_override = false;
             match operation {
                 ShiftOp::Arithmetic => {
                     new_value += (new_value & (1 << 6)) << 1;
@@ -593,8 +609,16 @@ impl CPU {
                 ShiftOp::IncludeCarry => {
                     new_value += self.registers.get_carry() << 7;
                 }
+                ShiftOp::IncludeCarryZ => {
+                    new_value += self.registers.get_carry() << 7;
+                    zero_override = true;
+                }
                 ShiftOp::Rotate => {
                     new_value += carry_out << 7;
+                }
+                ShiftOp::RotateZ => {
+                    new_value += carry_out << 7;
+                    zero_override = true;
                 }
                 ShiftOp::Logical => {
                     // value is already correct
@@ -602,7 +626,7 @@ impl CPU {
             }
             self.set_register_target(target, new_value);
             if carry_out == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
-            if new_value == 0 {self.registers.flag_zero();} else {self.registers.clear_zero();}
+            if new_value == 0 && !zero_override {self.registers.flag_zero();} else {self.registers.clear_zero();}
             self.registers.clear_subtract();
             self.registers.clear_half_carry();
             return 1;
@@ -624,6 +648,9 @@ impl CPU {
                 ShiftOp::Logical => {
                     // value is already correct
                 }
+                _ => {
+                    panic!("RightShiftMem: unused enum pattern found {:?}", operation);
+                }
             }
             self.set_memory_target(target, new_value);
             if carry_out == 1 {self.registers.flag_carry();} else {self.registers.clear_carry();}
@@ -637,6 +664,7 @@ impl CPU {
             let lsb: u8 = value & 0x0F;
             let msb: u8 = value & 0xF0;
             self.set_register_target(target, (lsb << 4) | (msb >> 4));
+            if value == 0 {self.registers.flag_zero();} else {self.registers.clear_zero();}
             self.registers.clear_subtract();
             self.registers.clear_half_carry();
             self.registers.clear_carry();
@@ -647,6 +675,7 @@ impl CPU {
             let lsb: u8 = value & 0x0F;
             let msb: u8 = value & 0xF0;
             self.set_memory_target(target, (lsb << 4) | (msb >> 4));
+            if value == 0 {self.registers.flag_zero();} else {self.registers.clear_zero();}
             self.registers.clear_subtract();
             self.registers.clear_half_carry();
             self.registers.clear_carry();
@@ -818,14 +847,14 @@ impl CPU {
     fn sub(&mut self, base: u8, value: u8, include_carry: bool) -> u8 {
         let carry = if include_carry {self.registers.get_carry()} else {0};
 
-        let (mid_value, overflow_1) = base.overflowing_sub(value);
-        let (new_value, overflow_2) = mid_value.overflowing_add(carry);
+        let (mid_value, overflow_1) = value.overflowing_add(carry);
+        let (new_value, overflow_2) = base.overflowing_sub(mid_value);
 
         
         if new_value == 0 { self.registers.flag_zero(); } else { self.registers.clear_zero() }
         self.registers.flag_subtract();
         let did_carry: bool = (overflow_1 && !overflow_2) || (!overflow_1 && overflow_2); // o_1 xor o_2
-        if did_carry { self.registers.flag_carry(); } else { self.registers.clear_carry() }
+        if overflow_2 { self.registers.flag_carry(); } else { self.registers.clear_carry() }
         let (_, half_carry) = (base & 0xF + carry).overflowing_sub(value & 0xF);
         if  half_carry { self.registers.flag_half_carry(); } else { self.registers.clear_half_carry() }
         
