@@ -847,15 +847,14 @@ impl CPU {
     fn sub(&mut self, base: u8, value: u8, include_carry: bool) -> u8 {
         let carry = if include_carry {self.registers.get_carry()} else {0};
 
-        let (mid_value, overflow_1) = value.overflowing_add(carry);
-        let (new_value, overflow_2) = base.overflowing_sub(mid_value);
+        let (mid_value, overflow_1) = base.overflowing_sub(value);
+        let (new_value, overflow_2) = mid_value.overflowing_sub(carry);
 
         
         if new_value == 0 { self.registers.flag_zero(); } else { self.registers.clear_zero() }
         self.registers.flag_subtract();
-        let did_carry: bool = (overflow_1 && !overflow_2) || (!overflow_1 && overflow_2); // o_1 xor o_2
-        if overflow_2 { self.registers.flag_carry(); } else { self.registers.clear_carry() }
-        let (_, half_carry) = (base & 0xF + carry).overflowing_sub(value & 0xF);
+        if overflow_1 || overflow_2 { self.registers.flag_carry(); } else { self.registers.clear_carry() }
+        let (_, half_carry) = (base & 0xF).overflowing_sub((value & 0xF) + carry);
         if  half_carry { self.registers.flag_half_carry(); } else { self.registers.clear_half_carry() }
         
         return new_value;
