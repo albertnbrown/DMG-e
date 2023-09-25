@@ -356,6 +356,7 @@ impl Instruction {
       0xD6 => Some(Instruction::SUBn(false)),
       0xD7 => Some(Instruction::CallI(InvariantFunction::F10)),
       0xD8 => Some(Instruction::Return(Conditional::CarryFlag)),
+      0xD9 => Some(Instruction::Return(Conditional::Unconditional)), // RETI placeholder
       0xDA => Some(Instruction::JumpNN(Conditional::CarryFlag)),
       0xDC => Some(Instruction::CallNN(Conditional::CarryFlag)),
       0xDE => Some(Instruction::SUBn(true)),
