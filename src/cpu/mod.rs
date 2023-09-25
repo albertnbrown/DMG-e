@@ -636,7 +636,7 @@ impl CPU {
             let value: u8 = self.get_register_target(target);
             let lsb: u8 = value & 0x0F;
             let msb: u8 = value & 0xF0;
-            self.set_register_target(target, (lsb << 4) | msb);
+            self.set_register_target(target, (lsb << 4) | (msb >> 4));
             self.registers.clear_subtract();
             self.registers.clear_half_carry();
             self.registers.clear_carry();
@@ -646,7 +646,7 @@ impl CPU {
             let value: u8 = self.get_memory_target(target);
             let lsb: u8 = value & 0x0F;
             let msb: u8 = value & 0xF0;
-            self.set_memory_target(target, (lsb << 4) | msb);
+            self.set_memory_target(target, (lsb << 4) | (msb >> 4));
             self.registers.clear_subtract();
             self.registers.clear_half_carry();
             self.registers.clear_carry();
