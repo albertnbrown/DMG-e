@@ -384,6 +384,7 @@ impl Instruction {
       0xF8 => Some(Instruction::LoadRRSPn(DoubleRegisterTarget::HL)),
       0xF9 => Some(Instruction::LoadSPRR(DoubleRegisterTarget::HL)),
       0xFA => Some(Instruction::LoadRNN(RegisterTarget::A)),
+      0xFB => Some(Instruction::NOP()),
       0xFE => Some(Instruction::CPn()),
       0xFF => Some(Instruction::CallI(InvariantFunction::F38)),
       _ => None
