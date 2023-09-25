@@ -454,31 +454,23 @@ impl CPU {
         }
         Instruction::LoadSPNN() => {
             let data = self.get_nn();
-            // sp is little endian as well
-            self.sp = ((data & 0x00FF) << 8) | ((data & 0xFF00) >> 8);
+            self.sp = data;
             return 3;
         }
         Instruction::LoadSPRR(source) => {
             let data = self.get_double_register_target(source);
-            self.sp = ((data & 0x00FF) << 8) | ((data & 0xFF00) >> 8);
+            self.sp = data;
             return 2;
         }
         Instruction::LoadRRSPn(destination) => {
             let n: u8 = self.get_n();
-            // parens make sure that you never get overflow or underflow unless instruction is bad
-            let data: u16 = ((self.sp as i32) + (n as i8) as i32) as u16;
+            let data: u16 = self.addi8(self.sp, n as i8);
             self.set_double_register_target(destination, data);
-            self.registers.clear_zero();
-            self.registers.clear_subtract();
             return 3;
         }
         Instruction::ADDSPn() => {
             let n: u8 = self.get_n();
-            // parens make sure that you never get overflow or underflow unless instruction is bad
-            let new_value: u16 = ((self.sp as i32) + (n as i8) as i32) as u16;
-            self.sp = new_value;
-            self.registers.clear_zero();
-            self.registers.clear_subtract();
+            self.sp = self.addi8(self.sp, n as i8);
             return 4;
         }
         Instruction::PushRR(source) => {
@@ -857,6 +849,17 @@ impl CPU {
         let (_, half_carry) = (base & 0xF).overflowing_sub((value & 0xF) + carry);
         if  half_carry { self.registers.flag_half_carry(); } else { self.registers.clear_half_carry() }
         
+        return new_value;
+    }
+
+    fn addi8(&mut self, base: u16, value: i8) -> u16 {
+        let new_value: u16 = ((self.sp as i32) + value as i32) as u16;
+        
+        // compute flags
+        let mid_value: u8 = (base & 0xFF) as u8;
+        _ = self.add(mid_value, value as u8, false);
+        self.registers.clear_zero();
+
         return new_value;
     }
 
