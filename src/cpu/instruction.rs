@@ -604,6 +604,7 @@ impl Instruction {
       0xC6 => Some(Instruction::SetMem(0, DoubleRegisterTarget::HL)),
       0xC7 => Some(Instruction::Set(0, RegisterTarget::A)),
       0xC8 => Some(Instruction::Set(1, RegisterTarget::B)),
+      0xC9 => Some(Instruction::Set(1, RegisterTarget::C)),
       0xCA => Some(Instruction::Set(1, RegisterTarget::D)),
       0xCB => Some(Instruction::Set(1, RegisterTarget::E)),
       0xCC => Some(Instruction::Set(1, RegisterTarget::H)),
