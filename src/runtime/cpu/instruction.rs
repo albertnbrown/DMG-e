@@ -664,8 +664,6 @@ impl Instruction {
       0xFD => Some(Instruction::Set(7, RegisterTarget::L)),
       0xFE => Some(Instruction::SetMem(7, DoubleRegisterTarget::HL)),
       0xFF => Some(Instruction::Set(7, RegisterTarget::A)),
-
-      _ => None
     }
   }
 }

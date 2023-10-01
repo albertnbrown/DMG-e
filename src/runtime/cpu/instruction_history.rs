@@ -1,4 +1,4 @@
-use crate::cpu::instruction::Instruction;
+use crate::runtime::cpu::instruction::Instruction;
 use std::fmt;
 
 #[derive(Debug, Copy, Clone)]
