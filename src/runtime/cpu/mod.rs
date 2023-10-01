@@ -1,5 +1,5 @@
 mod registers;
-mod memory;
+pub mod memory;
 mod instruction;
 mod instruction_history;
 
@@ -20,6 +20,8 @@ pub struct CPU {
     pub memory: Memory,
     nop_count: usize,
     instruction_history: [InstructionHistory; HISTORY_SIZE],
+    pub master_interrupt_request: bool,
+    pub stopped: bool,
 }
 
 impl fmt::Display for CPU {
@@ -52,6 +54,8 @@ impl CPU {
             memory: Memory::initialize(file_name),
             nop_count: 0,
             instruction_history: [InstructionHistory::new(); HISTORY_SIZE],
+            master_interrupt_request: false,
+            stopped: false,
         }
     }
 
