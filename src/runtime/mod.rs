@@ -42,7 +42,7 @@ impl Runtime {
         }
         
         if !self.cpu.stopped {
-            let div_increments: u8 = ((self.step_counter + steps) % usize::from(DIV_SPEED) - self.step_counter % usize::from(DIV_SPEED)) as u8;
+            let div_increments: u8 = calc_increments(DIV_SPEED, self.step_counter, steps);
             self.cpu.memory.increment_div(div_increments);
         }
 
@@ -50,7 +50,7 @@ impl Runtime {
         let mut tima = if reset { self.cpu.memory.flag_timer_interrrupt(); tma } else { self.cpu.memory.read_byte(TIMER_REGISTER) };
         let tima_control: TimerControl = TimerControl::from(self.cpu.memory.read_byte(TIMER_CONTROL_REGISTER));
         if tima_control.enabled {
-            let tima_increments = ((self.step_counter + steps) % usize::from(tima_control.speed) - self.step_counter % usize::from(tima_control.speed)) as u8;
+            let tima_increments: u8 = calc_increments(tima_control.speed, self.step_counter, steps);
             let (mut new_tima, overflow) = tima.overflowing_add(tima_increments);
             if overflow && new_tima > 0x00 {
                 new_tima = new_tima.wrapping_add(tma);
