@@ -5,14 +5,15 @@ pub const DIVIDER_REGISTER: u16 = 0xFF04;
 pub const TIMER_REGISTER: u16 = 0xFF05;
 pub const TIMER_MODULO_REGISTER: u16 = 0xFF06;
 pub const TIMER_CONTROL_REGISTER: u16 = 0xFF07;
+pub const INTERRUPT_REQUEST_REGISTER: u16 = 0xFF0F;
+pub const INTERRUPT_ENABLE_REGISTER: u16 = 0xFFFF;
 
-pub const INTERRUPT_REGISTER: usize = 0xFF0F;
 // interrupt bit layout
-const VBLANK_BIT: u8 = 0;
-const STAT_BIT: u8 = 1;
-const TIMER_BIT: u8 = 2;
-const SERIAL_BIT: u8 = 3;
-const JOYPAD_BIT: u8 = 4;
+pub const VBLANK_BIT: u8 = 0;
+pub const STAT_BIT: u8 = 1;
+pub const TIMER_BIT: u8 = 2;
+pub const SERIAL_BIT: u8 = 3;
+pub const JOYPAD_BIT: u8 = 4;
 
 pub struct Memory {
     memory: [u8; 0x10000]
@@ -79,6 +80,6 @@ impl Memory {
     }
 
     pub fn flag_timer_interrrupt(&mut self) {
-        self.memory[INTERRUPT_REGISTER] = self.memory[INTERRUPT_REGISTER] | 1<<TIMER_BIT;
+        self.memory[INTERRUPT_REQUEST_REGISTER as usize] = self.memory[INTERRUPT_REQUEST_REGISTER as usize] | 1<<TIMER_BIT;
     }
 }

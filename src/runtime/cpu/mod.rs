@@ -2,6 +2,7 @@ mod registers;
 pub mod memory;
 mod instruction;
 mod instruction_history;
+mod invariant_function;
 
 use registers::Registers;
 use memory::Memory;
@@ -129,9 +130,22 @@ impl CPU {
         return mem_cycles;
     }
 
+    pub fn call (&mut self, new_location: u16) {
+        self.push(self.pc);
+        self.pc = new_location;
+    }
+
     // returns the number of machine cycles taken by the instruction
     fn execute(&mut self, instruction: Instruction) -> usize {
       match instruction {
+        Instruction::EI() => {
+            self.master_interrupt_request = true;
+            return 1;
+        }
+        Instruction::DI() => {
+            self.master_interrupt_request = false;
+            return 1;
+        }
         Instruction::NOP() => { return 1; }
         Instruction::ADD(target, include_carry) => {
             let value: u8 = self.get_register_target(target);
@@ -360,8 +374,7 @@ impl CPU {
             let new_location: u16 = self.get_nn();
             let do_call: bool = self.check_conditional(condition);
             if do_call {
-                self.push(self.pc);
-                self.pc = new_location;
+                self.call(new_location);
                 cycles += 3;
             }
             return cycles;
@@ -370,7 +383,7 @@ impl CPU {
             let mut cycles: usize = 2;
             let do_call: bool = self.check_conditional(condition);
             if do_call {
-                self.pc =  self.pop();
+                self.pc = self.pop();
                 match condition {
                     Conditional::Unconditional => {cycles += 2;}
                     _ => {cycles += 3;}
@@ -378,9 +391,13 @@ impl CPU {
             }
             return cycles;
         }
+        Instruction::RETI() => {
+            self.pc = self.pop();
+            self.master_interrupt_request = true;
+            return 4;
+        }
         Instruction::CallI(target) => {
-            self.push(self.pc);
-            self.pc = self.deref_invariant_function(target);
+            self.call(target as u16);
             return 4;
         }
         Instruction::LoadRR(destination, source) => {
@@ -677,9 +694,6 @@ impl CPU {
             self.registers.clear_carry();
             return 3;
         }
-        Instruction::DI() => {
-            return 1;
-        }
       }
     }
 
@@ -914,35 +928,6 @@ impl CPU {
             }
             Conditional::Unconditional => {
                 return true;
-            }
-        }
-    }
-
-    fn deref_invariant_function(&self, function: InvariantFunction) -> u16 {
-        match function {
-            InvariantFunction::F00 => {
-                return 0x0000_u16;
-            }
-            InvariantFunction::F08 => {
-                return 0x0008_u16;
-            }
-            InvariantFunction::F10 => {
-                return 0x0010_u16;
-            }
-            InvariantFunction::F18 => {
-                return 0x0018_u16;
-            }
-            InvariantFunction::F20 => {
-                return 0x0020_u16;
-            }
-            InvariantFunction::F28 => {
-                return 0x0028_u16;
-            }
-            InvariantFunction::F30 => {
-                return 0x0030_u16;
-            }
-            InvariantFunction::F38 => {
-                return 0x0038_u16;
             }
         }
     }

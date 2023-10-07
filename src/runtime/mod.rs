@@ -1,10 +1,12 @@
 pub mod cpu;
 pub mod timer_control;
+pub mod interrupt;
 
 use cpu::CPU;
 use timer_control::*;
+use interrupt::*;
 
-use self::cpu::memory::{TIMER_MODULO_REGISTER, TIMER_REGISTER, TIMER_CONTROL_REGISTER};
+use self::cpu::memory::{TIMER_MODULO_REGISTER, TIMER_REGISTER, TIMER_CONTROL_REGISTER, INTERRUPT_REQUEST_REGISTER, INTERRUPT_ENABLE_REGISTER};
 
 
 const DIV_SPEED: TimerSpeed = TimerSpeed::Clock256;
@@ -12,6 +14,7 @@ const DIV_SPEED: TimerSpeed = TimerSpeed::Clock256;
 pub struct Runtime {
     cpu: CPU,
     step_counter: usize,
+    master_interrupt_enabled: bool,
 }
 
 impl Runtime {
@@ -20,6 +23,7 @@ impl Runtime {
         return Runtime {
             cpu: CPU::initialize(file_name),
             step_counter: 0,
+            master_interrupt_enabled: false,
         }
     }
 
@@ -57,8 +61,29 @@ impl Runtime {
         self.cpu.memory.write_byte(TIMER_REGISTER, tima);
     }
 
+    fn handle_interrupts(&mut self) -> usize {
+        if !self.master_interrupt_enabled { return 0; }
+        let interrupt = Interrupt::from(self.cpu.memory.read_byte(INTERRUPT_REQUEST_REGISTER) & self.cpu.memory.read_byte(INTERRUPT_ENABLE_REGISTER));
+        
+        match interrupt {
+            Interrupt::None => {
+                return 0;
+            }
+            _ => {
+                self.cpu.call(interrupt as u16);
+                self.master_interrupt_enabled = false;
+                self.cpu.master_interrupt_request = false;
+                return 5;
+            }
+        }
+    }
+
     fn step_debug(&mut self) -> usize {
-        let steps: usize = self.cpu.step(self.step_counter);
+        let enable_ime: bool = self.cpu.master_interrupt_request;
+        let mut steps: usize = self.cpu.step(self.step_counter);
+        steps += self.handle_interrupts();
+        self.master_interrupt_enabled = if enable_ime { self.cpu.master_interrupt_request } else { false };
+
         if self.cpu.memory.read_byte(0xFF02) == 0x81 {
             // print!("{:x} ", self.cpu.memory.read_byte(0xFF01));
             print!("{}", std::str::from_utf8(&[self.cpu.memory.read_byte(0xFF01)]).unwrap());

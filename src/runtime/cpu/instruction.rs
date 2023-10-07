@@ -1,3 +1,5 @@
+use super::invariant_function::InvariantFunction;
+
 #[derive(Clone, Copy, Debug)]
 pub enum Instruction {
   // non-prefixed instructions
@@ -61,6 +63,8 @@ pub enum Instruction {
   PopRR(DoubleRegisterTarget), // pop from the stack to the double register
 
   DI(), // disable interrupts
+  EI(), // enable interrupts
+  RETI(), // unconditional return + enable interrupts
 
   // prefixed instructions
   Reset(u8, RegisterTarget), // set the bit indexed by the first parameter on the register target to zero
@@ -94,11 +98,6 @@ pub enum Conditional {
   CarryFlag,
   NotCarryFlag,
   Unconditional,
-}
-
-#[derive(Clone, Copy, Debug)]
-pub enum InvariantFunction {
-  F00, F08, F10, F18, F20, F28, F30, F38,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -356,7 +355,7 @@ impl Instruction {
       0xD6 => Some(Instruction::SUBn(false)),
       0xD7 => Some(Instruction::CallI(InvariantFunction::F10)),
       0xD8 => Some(Instruction::Return(Conditional::CarryFlag)),
-      0xD9 => Some(Instruction::Return(Conditional::Unconditional)), // RETI placeholder
+      0xD9 => Some(Instruction::RETI()),
       0xDA => Some(Instruction::JumpNN(Conditional::CarryFlag)),
       0xDC => Some(Instruction::CallNN(Conditional::CarryFlag)),
       0xDE => Some(Instruction::SUBn(true)),
@@ -384,7 +383,7 @@ impl Instruction {
       0xF8 => Some(Instruction::LoadRRSPn(DoubleRegisterTarget::HL)),
       0xF9 => Some(Instruction::LoadSPRR(DoubleRegisterTarget::HL)),
       0xFA => Some(Instruction::LoadRNN(RegisterTarget::A)),
-      0xFB => Some(Instruction::NOP()),
+      0xFB => Some(Instruction::EI()),
       0xFE => Some(Instruction::CPn()),
       0xFF => Some(Instruction::CallI(InvariantFunction::F38)),
       _ => None
