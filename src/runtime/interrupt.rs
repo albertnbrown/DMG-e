@@ -1,5 +1,6 @@
 use super::cpu::memory::{VBLANK_BIT, STAT_BIT, TIMER_BIT, SERIAL_BIT, JOYPAD_BIT};
 
+#[derive(Clone, Copy, Debug)]
 pub enum Interrupt {
     VBlank,
     LCDSTAT,
@@ -30,7 +31,7 @@ impl std::convert::From<u8> for Interrupt {
     }
 }
 
-impl std::convert::From<Interrupt> for u16 {
+impl std::convert::From<Interrupt> for u8 {
     fn from(interrupt: Interrupt) -> Self {
         match interrupt {
             Interrupt::VBlank => {
@@ -50,6 +51,31 @@ impl std::convert::From<Interrupt> for u16 {
             }
             Interrupt::None => {
                 return 0;
+            }
+        }
+    }
+}
+
+impl std::convert::From<Interrupt> for u16 {
+    fn from(interrupt: Interrupt) -> Self {
+        match interrupt {
+            Interrupt::VBlank => {
+                return 0x40;
+            }
+            Interrupt::LCDSTAT => {
+                return 0x48;
+            }
+            Interrupt::Timer => {
+                return 0x50;
+            }
+            Interrupt::Serial => {
+                return 0x58;
+            }
+            Interrupt::Joypad => {
+                return 0x60;
+            }
+            Interrupt::None => {
+                panic!("Attempted to call None interrupt");
             }
         }
     }
