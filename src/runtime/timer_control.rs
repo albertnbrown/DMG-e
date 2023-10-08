@@ -68,10 +68,8 @@ impl std::convert::From<u8> for TimerControl {
 
 pub fn calc_increments(speed: TimerSpeed, past: usize, stepped: usize) -> u8 {
     let speed_modulo: usize = usize::from(speed);
-    let modulo_past: usize = past % speed_modulo;
-    let mut modulo_now: usize = (past + stepped) % speed_modulo;
-
-    if modulo_now < modulo_past { modulo_now += speed_modulo; }
+    let modulo_past: usize = past / speed_modulo;
+    let modulo_now: usize = (past + stepped) / speed_modulo;
 
     return (modulo_now - modulo_past) as u8
 }
