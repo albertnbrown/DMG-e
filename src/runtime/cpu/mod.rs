@@ -68,28 +68,28 @@ impl CPU {
         let pre_value = self.memory.read_byte(address);
         self.memory.write_byte(address, value);
 
-        if address == TIMER_MODULO_REGISTER || address == TIMER_CONTROL_REGISTER {
-            println!("WRITE TO TIMER");
-            println!("{:x}", address);
-            println!("{:x}", value);
-            println!("{:x}", pre_value);
-            println!("{:x}", self.pc);
-            println!("{:x}", self.registers.a);
-            self.memory.print_range(TIMER_MODULO_REGISTER as usize, 1);
-            self.memory.print_range(TIMER_CONTROL_REGISTER as usize, 1);
-            self.print_self();
-        }
-        if address == INTERRUPT_ENABLE_REGISTER || address == INTERRUPT_REQUEST_REGISTER {
-            println!("WRITE TO INTERRUPTS");
-            println!("{:x}", address);
-            println!("{:x}", value);
-            println!("{:x}", pre_value);
-            println!("{:x}", self.pc);
-            println!("{:x}", self.registers.a);
-            self.memory.print_range(INTERRUPT_ENABLE_REGISTER as usize, 1);
-            self.memory.print_range(INTERRUPT_REQUEST_REGISTER as usize, 1);
-            self.print_self();
-        }
+        // if address == TIMER_MODULO_REGISTER || address == TIMER_CONTROL_REGISTER {
+        //     println!("WRITE TO TIMER");
+        //     println!("{:x}", address);
+        //     println!("{:x}", value);
+        //     println!("{:x}", pre_value);
+        //     println!("{:x}", self.pc);
+        //     println!("{:x}", self.registers.a);
+        //     self.memory.print_range(TIMER_MODULO_REGISTER as usize, 1);
+        //     self.memory.print_range(TIMER_CONTROL_REGISTER as usize, 1);
+        //     self.print_self();
+        // }
+        // if address == INTERRUPT_ENABLE_REGISTER || address == INTERRUPT_REQUEST_REGISTER {
+        //     println!("WRITE TO INTERRUPTS");
+        //     println!("{:x}", address);
+        //     println!("{:x}", value);
+        //     println!("{:x}", pre_value);
+        //     println!("{:x}", self.pc);
+        //     println!("{:x}", self.registers.a);
+        //     self.memory.print_range(INTERRUPT_ENABLE_REGISTER as usize, 1);
+        //     self.memory.print_range(INTERRUPT_REQUEST_REGISTER as usize, 1);
+        //     self.print_self();
+        // }
     }
 
     // returns the number of machine cycles taken by the step
