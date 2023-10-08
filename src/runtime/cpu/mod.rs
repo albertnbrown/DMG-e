@@ -5,7 +5,7 @@ mod instruction_history;
 mod invariant_function;
 
 use registers::Registers;
-use memory::Memory;
+use memory::*;
 use instruction::*;
 use instruction_history::InstructionHistory;
 use std::fmt;
@@ -15,7 +15,7 @@ const HISTORY_SIZE: usize = 18; // make divisible by DEBUG_INSTRUCTIONS_PER_LINE
 const PADDING_WIDTH: usize = 63;
 
 pub struct CPU {
-    registers: Registers,
+    pub registers: Registers,
     pub pc: u16,
     sp: u16,
     pub memory: Memory,
@@ -64,15 +64,32 @@ impl CPU {
         println!("{}", self);
     }
 
-    fn write_byte_debug(&mut self, address: u16, value: u8) {
+    pub fn write_byte_debug(&mut self, address: u16, value: u8) {
+        let pre_value = self.memory.read_byte(address);
         self.memory.write_byte(address, value);
 
-        // if address >= 0xd800 && address <= 0xd81F {
-        //     println!("{:x}", value);
-        //     println!("{:x}", self.pc);
-        //     self.memory.print_range(0xd800, 0x0020);
-        //     self.print_self();
-        // }
+        if address == TIMER_MODULO_REGISTER || address == TIMER_CONTROL_REGISTER {
+            println!("WRITE TO TIMER");
+            println!("{:x}", address);
+            println!("{:x}", value);
+            println!("{:x}", pre_value);
+            println!("{:x}", self.pc);
+            println!("{:x}", self.registers.a);
+            self.memory.print_range(TIMER_MODULO_REGISTER as usize, 1);
+            self.memory.print_range(TIMER_CONTROL_REGISTER as usize, 1);
+            self.print_self();
+        }
+        if address == INTERRUPT_ENABLE_REGISTER || address == INTERRUPT_REQUEST_REGISTER {
+            println!("WRITE TO INTERRUPTS");
+            println!("{:x}", address);
+            println!("{:x}", value);
+            println!("{:x}", pre_value);
+            println!("{:x}", self.pc);
+            println!("{:x}", self.registers.a);
+            self.memory.print_range(INTERRUPT_ENABLE_REGISTER as usize, 1);
+            self.memory.print_range(INTERRUPT_REQUEST_REGISTER as usize, 1);
+            self.print_self();
+        }
     }
 
     // returns the number of machine cycles taken by the step
