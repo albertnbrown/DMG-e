@@ -84,7 +84,7 @@ impl Runtime {
 
     fn handle_interrupts(&mut self) -> usize {
         if !self.master_interrupt_enabled { return 0; }
-        let interrupt = Interrupt::from(self.cpu.memory.read_byte(INTERRUPT_REQUEST_REGISTER) & self.cpu.memory.read_byte(INTERRUPT_ENABLE_REGISTER));
+        let interrupt: Interrupt = self.check_interrupts();
         
         match interrupt {
             Interrupt::None => {
@@ -103,20 +103,27 @@ impl Runtime {
         }
     }
 
+    fn check_interrupts(&self) -> Interrupt {
+        return Interrupt::from(
+            self.cpu.memory.read_byte(INTERRUPT_REQUEST_REGISTER) &
+            self.cpu.memory.read_byte(INTERRUPT_ENABLE_REGISTER)
+        )
+    }
+
     fn step_debug(&mut self) -> usize {
-        let tma = self.cpu.memory.read_byte(TIMER_MODULO_REGISTER);
-        let tcr = self.cpu.memory.read_byte(TIMER_CONTROL_REGISTER);
-        let ifff = self.cpu.memory.read_byte(INTERRUPT_REQUEST_REGISTER);
-        let ieee = self.cpu.memory.read_byte(INTERRUPT_ENABLE_REGISTER);
+        // let tma = self.cpu.memory.read_byte(TIMER_MODULO_REGISTER);
+        // let tcr = self.cpu.memory.read_byte(TIMER_CONTROL_REGISTER);
+        // let ifff = self.cpu.memory.read_byte(INTERRUPT_REQUEST_REGISTER);
+        // let ieee = self.cpu.memory.read_byte(INTERRUPT_ENABLE_REGISTER);
 
         let mut steps: usize = self.cpu.step(self.step_counter);
         steps += self.handle_interrupts();
         self.master_interrupt_enabled = self.cpu.master_interrupt_request;
 
-        if tma != self.cpu.memory.read_byte(TIMER_MODULO_REGISTER) { self.debug_flag = true; }
-        if tcr != self.cpu.memory.read_byte(TIMER_CONTROL_REGISTER) { self.debug_flag = true; }
-        if ifff != self.cpu.memory.read_byte(INTERRUPT_REQUEST_REGISTER) { self.debug_flag = true; }
-        if ieee != self.cpu.memory.read_byte(INTERRUPT_ENABLE_REGISTER) { self.debug_flag = true; }
+        // if tma != self.cpu.memory.read_byte(TIMER_MODULO_REGISTER) { self.debug_flag = true; }
+        // if tcr != self.cpu.memory.read_byte(TIMER_CONTROL_REGISTER) { self.debug_flag = true; }
+        // if ifff != self.cpu.memory.read_byte(INTERRUPT_REQUEST_REGISTER) { self.debug_flag = true; }
+        // if ieee != self.cpu.memory.read_byte(INTERRUPT_ENABLE_REGISTER) { self.debug_flag = true; }
 
         if self.cpu.memory.read_byte(0xFF02) == 0x81 {
             // print!("{:x} ", self.cpu.memory.read_byte(0xFF01));
