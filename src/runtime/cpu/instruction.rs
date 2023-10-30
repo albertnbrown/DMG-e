@@ -4,6 +4,7 @@ use super::invariant_function::InvariantFunction;
 pub enum Instruction {
   // non-prefixed instructions
   NOP(), // does nothing
+  
   ADD(RegisterTarget, bool), // add register target to register A with bool flag for including carry
   ADDmem(DoubleRegisterTarget, bool), // add value at memory target to register A with bool flag for including carry
   ADDn(bool), // add immediate byte to register A (increments pc) with bool flag for including carry
@@ -15,6 +16,7 @@ pub enum Instruction {
   CP(RegisterTarget), // compares register target to register a
   CPmem(DoubleRegisterTarget), // compares value at memory target to register a
   CPn(), // compares immediate byte to register A (increments pc)
+  
   INC(RegisterTarget), // increments register target
   INCmem(DoubleRegisterTarget), // increments value at memory target
   INC16(DoubleRegisterTarget), // increment the 16 bit value in the double register
@@ -23,6 +25,7 @@ pub enum Instruction {
   DECmem(DoubleRegisterTarget), // decrements value at memory target
   DEC16(DoubleRegisterTarget), // decrement the 16 bit value in the double register
   DECSP(), // decrement the stack pointer
+  
   AND(RegisterTarget), // logical & between register target and register a, store in register a
   ANDmem(DoubleRegisterTarget), // logical & between value at memory target and register a, store in register a
   ANDn(), // logical & between immediate byte and register a, store in register a
@@ -36,12 +39,15 @@ pub enum Instruction {
   SCF(), // set carry flag to true
   CPL(), // complement register a
   DAA(), // retain binary decimal form after adding or subtracting binary decimals
+  
   JumpNN(Conditional), // jump to the memory address stored in nn
   JumpHL(), // jump to the pc stored in HL
   JumpRn(Conditional), // jump relatively by the signed amount stored in n
+  
   CallNN(Conditional), // push pc to stack and jump to nn
   Return(Conditional), // pop a pc from the stack and jump to it
   CallI(InvariantFunction), // pop a pc from the stack and jump to it
+  
   LoadRR(RegisterTarget, RegisterTarget), // load data from the second register into the first register
   LoadRN(RegisterTarget), // load the immediate data n into the specified register
   LoadRMem(RegisterTarget, DoubleRegisterTarget, PostOp), // load the data at the memory target into the specified register and then perform postop on memory target
@@ -58,9 +64,12 @@ pub enum Instruction {
   LoadSPNN(), // put the immediate data nn into the stack pointer
   LoadSPRR(DoubleRegisterTarget), // set the stack pointer to the double register
   LoadRRSPn(DoubleRegisterTarget), // set the double register equal to the stack pointer plus the signed immediate data n
+  
   ADDSPn(), // adds the signed immediate data n to the stack pointer
   PushRR(DoubleRegisterTarget), // push the double register value to the stack
   PopRR(DoubleRegisterTarget), // pop from the stack to the double register
+
+  Halt(), // stop CPU processing until interrupt is requested
 
   DI(), // disable interrupts
   EI(), // enable interrupts
@@ -252,7 +261,7 @@ impl Instruction {
       0x73 => Some(Instruction::LoadMemR(DoubleRegisterTarget::HL, RegisterTarget::E, PostOp::Nop)),
       0x74 => Some(Instruction::LoadMemR(DoubleRegisterTarget::HL, RegisterTarget::H, PostOp::Nop)),
       0x75 => Some(Instruction::LoadMemR(DoubleRegisterTarget::HL, RegisterTarget::L, PostOp::Nop)),
-      0x76 => None, // Halt
+      0x76 => Some(Instruction::Halt()), // Halt
       0x77 => Some(Instruction::LoadMemR(DoubleRegisterTarget::HL, RegisterTarget::A, PostOp::Nop)),
       0x78 => Some(Instruction::LoadRR(RegisterTarget::A, RegisterTarget::B)),
       0x79 => Some(Instruction::LoadRR(RegisterTarget::A, RegisterTarget::C)),

@@ -22,6 +22,7 @@ pub struct CPU {
     nop_count: usize,
     instruction_history: [InstructionHistory; HISTORY_SIZE],
     pub master_interrupt_request: bool,
+    pub halted: bool,
     pub stopped: bool,
 }
 
@@ -56,6 +57,7 @@ impl CPU {
             nop_count: 0,
             instruction_history: [InstructionHistory::new(); HISTORY_SIZE],
             master_interrupt_request: false,
+            halted: false,
             stopped: false,
         }
     }
